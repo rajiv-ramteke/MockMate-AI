@@ -199,10 +199,11 @@ Job Description: ${jobDescription}
 
 Important constraints:
 1. Calculate the 'matchScore' (0-100) strictly based on how well the candidate's resume and skills match the job description.
-2. Generate exactly 5 PURELY technical questions for the 'technicalQuestions' array (e.g. coding, architecture, tools).
-3. Generate exactly 5 PURELY behavioral questions for the 'behavioralQuestions' array (e.g. soft skills, past experiences, situational).
-4. Generate exactly 5 multiple-choice questions for the 'technicalQuiz' array based on the job requirements. Provide 4 options and the correct answer.
+2. Generate EXACTLY 5 PURELY technical questions for the 'technicalQuestions' array (e.g. coding, architecture, tools). EVERY question MUST have all 3 fields: 'question', 'intention', and 'answer'. No exceptions.
+3. Generate EXACTLY 5 PURELY behavioral questions for the 'behavioralQuestions' array (e.g. soft skills, past experiences, situational). EVERY question MUST have all 3 fields: 'question', 'intention', and 'answer'. No exceptions.
+4. Generate EXACTLY 5 multiple-choice questions for the 'technicalQuiz' array. Each MUST have 'question', 'options' (array of 4 strings), and 'correctAnswer'.
 5. DO NOT mix technical questions into the behavioral section or vice versa. Keep them strictly separated.
+6. Do NOT generate more than 5 items in any array.
 
 ${jsonSchemaExplanation}`
 
@@ -216,7 +217,7 @@ ${jsonSchemaExplanation}`
             { role: "user", content: prompt }
         ],
         temperature: 0.2,
-        max_tokens: 4096,
+        max_tokens: 6000,
         top_p: 1,
         response_format: { type: "json_object" }
     })
@@ -246,11 +247,24 @@ ${jsonSchemaExplanation}`
         const parsed = JSON.parse(jsonString)
         
         // Sanitize arrays to prevent Mongoose CastError
+        // Filter out any questions missing required fields: question, intention, answer
         if (Array.isArray(parsed.technicalQuestions)) {
-            parsed.technicalQuestions = parsed.technicalQuestions.filter(q => typeof q === 'object' && q !== null && q.question && typeof q.question === 'string')
+            parsed.technicalQuestions = parsed.technicalQuestions
+                .filter(q => typeof q === 'object' && q !== null
+                    && q.question && typeof q.question === 'string'
+                    && q.intention && typeof q.intention === 'string'
+                    && q.answer && typeof q.answer === 'string'
+                )
+                .slice(0, 10) // cap to prevent runaway arrays
         }
         if (Array.isArray(parsed.behavioralQuestions)) {
-            parsed.behavioralQuestions = parsed.behavioralQuestions.filter(q => typeof q === 'object' && q !== null && q.question && typeof q.question === 'string')
+            parsed.behavioralQuestions = parsed.behavioralQuestions
+                .filter(q => typeof q === 'object' && q !== null
+                    && q.question && typeof q.question === 'string'
+                    && q.intention && typeof q.intention === 'string'
+                    && q.answer && typeof q.answer === 'string'
+                )
+                .slice(0, 10) // cap to prevent runaway arrays
         }
         if (Array.isArray(parsed.technicalQuiz)) {
             parsed.technicalQuiz = parsed.technicalQuiz.filter(q => typeof q === 'object' && q !== null && q.question && Array.isArray(q.options) && q.correctAnswer)
