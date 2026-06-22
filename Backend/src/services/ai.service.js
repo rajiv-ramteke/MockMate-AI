@@ -267,7 +267,13 @@ ${jsonSchemaExplanation}`
                 .slice(0, 10) // cap to prevent runaway arrays
         }
         if (Array.isArray(parsed.technicalQuiz)) {
-            parsed.technicalQuiz = parsed.technicalQuiz.filter(q => typeof q === 'object' && q !== null && q.question && Array.isArray(q.options) && q.correctAnswer)
+            parsed.technicalQuiz = parsed.technicalQuiz
+                .filter(q => typeof q === 'object' && q !== null && q.question && Array.isArray(q.options) && (q.correctAnswer || q.answer))
+                .map(q => ({
+                    question: q.question,
+                    options: q.options,
+                    correctAnswer: q.correctAnswer || q.answer
+                }))
         }
         if (Array.isArray(parsed.skillGaps)) {
             parsed.skillGaps = parsed.skillGaps.filter(s => typeof s === 'object' && s !== null && s.skill && typeof s.skill === 'string')
