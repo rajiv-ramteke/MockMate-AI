@@ -192,18 +192,20 @@ CRITICAL: Return ONLY valid JSON. Ensure "behavioralQuestions" is at the ROOT le
 
 async function generateInterviewReport({ resume, selfDescription, jobDescription }) {
 
-    const prompt = `Generate an interview report for a candidate with the following details:
+    const prompt = `Generate an interview report for a candidate by analyzing their resume against the job description:
 Resume: ${resume}
 Self Description: ${selfDescription}
 Job Description: ${jobDescription}
 
 Important constraints:
-1. Calculate the 'matchScore' (0-100) strictly based on how well the candidate's resume and skills match the job description.
-2. Generate EXACTLY 5 PURELY technical questions for the 'technicalQuestions' array (e.g. coding, architecture, tools). EVERY question MUST have all 3 fields: 'question', 'intention', and 'answer'. No exceptions.
-3. Generate EXACTLY 5 PURELY behavioral questions for the 'behavioralQuestions' array (e.g. soft skills, past experiences, situational). EVERY question MUST have all 3 fields: 'question', 'intention', and 'answer'. No exceptions.
-4. Generate EXACTLY 5 multiple-choice questions for the 'technicalQuiz' array. Each MUST have 'question', 'options' (array of 4 strings), and 'correctAnswer'.
-5. DO NOT mix technical questions into the behavioral section or vice versa. Keep them strictly separated.
-6. Do NOT generate more than 5 items in any array.
+1. **Match Score Calculation**: Analyze the Resume against the Job Description. Calculate the 'matchScore' (percentage 0-100). This score MUST strictly represent how closely the candidate's skills, experience, and projects in their Resume align with the exact requirements of the Job Description.
+2. **Skill Gaps Identification**: Identify specific 'skillGaps'. You MUST list only the skills that are explicitly required by the Job Description but are completely missing or weak in the candidate's Resume. For each missing required skill, specify the 'skill' name and 'severity' (low, medium, high).
+3. Generate EXACTLY 5 PURELY technical questions tailored to the job description and the candidate's resume. Place them in the 'technicalQuestions' array. EVERY question MUST have all 3 fields: 'question', 'intention', and 'answer'.
+4. Generate EXACTLY 5 PURELY behavioral questions tailored to the candidate's experience and the job role. Place them in the 'behavioralQuestions' array. EVERY question MUST have all 3 fields: 'question', 'intention', and 'answer'.
+5. Generate EXACTLY 5 multiple-choice questions for the 'technicalQuiz' array. Each MUST have 'question', 'options' (array of 4 strings), and 'correctAnswer'.
+6. Generate a detailed 'preparationPlan' roadmap. It should have a day-by-day 'focus' and specific 'tasks' to help the candidate overcome their skill gaps and prepare for the interview.
+7. DO NOT mix technical questions into the behavioral section or vice versa.
+8. Do NOT generate more than 5 items in any question array.
 
 ${jsonSchemaExplanation}`
 

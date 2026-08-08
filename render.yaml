@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: smart-interview-genius
+    env: docker
+    plan: free # Change to standard/pro if needed
+    branch: main
+    envVars:
+      - key: PORT
+        value: 7860 # Matches Dockerfile EXPOSE and ENV
+      # Ensure you add other required environment variables (like MongoDB URI, Gemini API key, etc.) in the Render dashboard

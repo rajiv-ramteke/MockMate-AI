@@ -24,6 +24,7 @@ async function testAI() {
             jobDescription: "test job",
             ...result
         })
+        console.log("RAW QUIZ OUTPUT:", JSON.stringify(result.technicalQuiz, null, 2))
 
         await doc.validate()
         console.log("Database Validation SUCCESS!")

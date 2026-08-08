@@ -1,6 +1,6 @@
 import { useContext, useEffect } from "react";
 import { AuthContext } from "../auth.context";
-import { login, register, logout, getMe } from "../services/auth.api";
+import { login, register, logout, getMe, googleLogin, verifyOtp, resendOtp } from "../services/auth.api";
 
 
 
@@ -10,10 +10,10 @@ export const useAuth = () => {
     const { user, setUser, loading, setLoading } = context
 
 
-    const handleLogin = async ({ email, password }) => {
+    const handleLogin = async ({ identifier, password }) => {
         setLoading(true)
         try {
-            const data = await login({ email, password })
+            const data = await login({ identifier, password })
             setUser(data.user)
             return true;
         } catch (err) {
@@ -63,5 +63,40 @@ export const useAuth = () => {
 
     }, [])
 
-    return { user, loading, handleRegister, handleLogin, handleLogout }
+    const handleGoogleLogin = async (credential) => {
+        setLoading(true)
+        try {
+            const data = await googleLogin(credential)
+            setUser(data.user)
+            return true;
+        } catch (err) {
+            throw err
+        } finally {
+            setLoading(false)
+        }
+    }
+
+    const handleVerifyOtp = async (email, otp) => {
+        setLoading(true)
+        try {
+            const data = await verifyOtp(email, otp)
+            setUser(data.user)
+            return true;
+        } catch (err) {
+            throw err
+        } finally {
+            setLoading(false)
+        }
+    }
+
+    const handleResendOtp = async (email) => {
+        try {
+            const data = await resendOtp(email)
+            return data;
+        } catch (err) {
+            throw err
+        }
+    }
+
+    return { user, loading, handleRegister, handleLogin, handleLogout, handleGoogleLogin, handleVerifyOtp, handleResendOtp }
 }

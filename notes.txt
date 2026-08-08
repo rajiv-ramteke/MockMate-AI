@@ -1,0 +1,24 @@
+# MockMate AI
+
+## Introduction
+MockMate AI is a modern, AI-powered interview preparation application designed to help candidates excel in their job interviews. It provides a customized preparation experience by generating personalized technical and behavioral questions based on the candidate's resume, all wrapped in a premium custom user interface featuring dark mode and glassmorphism.
+
+## Problem Statement
+Preparing for interviews can often be an overwhelming and unstructured process. Candidates struggle with predicting the types of questions they might face, lack objective feedback on their current skill levels, and often do not have a tailored roadmap to guide their preparation. Generic interview guides fail to address the specific experiences and target roles of individual candidates, leaving them underprepared for real-world scenarios.
+
+## Tech Stack
+- **Frontend:** React, Vite, SCSS (Custom UI with Glassmorphism & Dark Mode)
+- **Backend:** Node.js, Express.js
+- **Database:** MongoDB
+- **AI Integration:** Google Gemini AI
+- **Containerization & Deployment:** Docker
+
+## Working
+1. **Resume Analysis:** The user uploads their resume to the application.
+2. **AI Processing:** The Node.js/Express backend securely processes the resume and communicates with the Google Gemini AI.
+3. **Question Generation:** The AI analyzes the provided experience and skills to generate highly tailored technical and behavioral interview questions.
+4. **Smart Scoring:** The system provides match scores and identifies potential skill gaps in the candidate's profile.
+5. **Roadmap Creation:** Based on the analysis, a custom, day-by-day interview preparation roadmap is generated to guide the user's study efforts.
+
+## Outcome
+Users receive a highly personalized, structured, and comprehensive interview preparation experience. By identifying skill gaps, practicing tailored questions, and following a custom roadmap, candidates can significantly improve their confidence, refine their answers, and increase their chances of success in real job interviews.

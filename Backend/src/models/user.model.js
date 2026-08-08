@@ -16,7 +16,37 @@ const userSchema = new mongoose.Schema({
 
     password: {
         type: String,
-        required: true
+        required: function() {
+            // Password is required only if googleId is not present
+            return !this.googleId;
+        }
+    },
+
+    googleId: {
+        type: String,
+        unique: true,
+        sparse: true // Allows multiple users without a googleId
+    },
+
+    resetPasswordToken: {
+        type: String
+    },
+
+    resetPasswordExpires: {
+        type: Date
+    },
+
+    isVerified: {
+        type: Boolean,
+        default: false
+    },
+
+    verificationOtp: {
+        type: String
+    },
+
+    verificationOtpExpires: {
+        type: Date
     }
 })
 

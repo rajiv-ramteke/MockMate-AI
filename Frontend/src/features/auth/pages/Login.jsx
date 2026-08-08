@@ -1,53 +1,153 @@
-import React,{useState} from 'react'
+import React, { useState } from 'react'
 import { useNavigate, Link } from 'react-router'
+import { signInWithPopup } from 'firebase/auth'
+import { auth, googleProvider } from '../../../config/firebase'
 import "../auth.form.scss"
 import { useAuth } from '../hooks/useAuth'
 
 const Login = () => {
 
-    const { loading, handleLogin } = useAuth()
+    const { loading, handleLogin, handleGoogleLogin } = useAuth()
     const navigate = useNavigate()
 
-    const [ email, setEmail ] = useState("")
-    const [ password, setPassword ] = useState("")
-    const [ error, setError ] = useState("")
+    const [identifier, setIdentifier] = useState("")
+    const [password, setPassword] = useState("")
+    const [error, setError] = useState("")
+    const [unverifiedEmail, setUnverifiedEmail] = useState("")
 
     const handleSubmit = async (e) => {
         e.preventDefault()
         setError("")
+        setUnverifiedEmail("")
         try {
-            await handleLogin({email,password})
+            await handleLogin({ identifier, password })
             navigate('/')
         } catch (err) {
-            setError(err.message || "Failed to login. Please check your credentials.")
+            if (err.unverified) setUnverifiedEmail(identifier)
+            setError(err.message || "Invalid credentials. Please try again.")
         }
     }
 
-    if(loading){
-        return (<main style={{ backgroundColor: '#0d1117', height: '100vh' }}></main>)
+    const handleGoogleSignIn = async () => {
+        try {
+            const result = await signInWithPopup(auth, googleProvider)
+            const token = await result.user.getIdToken()
+            await handleGoogleLogin(token)
+            navigate('/')
+        } catch (err) {
+            console.error(err)
+            if (err.code !== 'auth/popup-closed-by-user') {
+                setError(`Error: ${err.message || 'Google sign-in failed.'}`)
+            }
+        }
     }
 
+    if (loading) return <main className="auth-page" />
+
     return (
-        <main>
+        <main className="auth-page">
             <div className="form-container">
-                <h1>Smart InterviewGenius AI</h1>
-                {error && <div style={{ color: '#ff4d4d', marginBottom: '1rem', fontSize: '0.9rem', textAlign: 'center', backgroundColor: 'rgba(255, 77, 77, 0.1)', padding: '0.5rem', borderRadius: '0.4rem', border: '1px solid rgba(255, 77, 77, 0.3)' }}>{error}</div>}
+
+                {/* Brand Header */}
+                <div className="brand-header">
+                    <span className="brand-icon">🧠</span>
+                    <h1>MockMate AI</h1>
+                    <p className="subtitle">Sign in to continue your journey</p>
+                </div>
+
+                {/* Alerts */}
+                {error && <div className="auth-alert error">{error}</div>}
+                {unverifiedEmail && (
+                    <div className="auth-alert info">
+                        Email not verified.{' '}
+                        <Link to={`/verify-otp?email=${encodeURIComponent(unverifiedEmail)}`}>
+                            Verify now →
+                        </Link>
+                    </div>
+                )}
+
+                {/* Form */}
                 <form onSubmit={handleSubmit}>
                     <div className="input-group">
-                        <label htmlFor="email">Email</label>
-                        <input
-                            onChange={(e) => { setEmail(e.target.value) }}
-                            type="email" id="email" name='email' placeholder='Enter email address' required />
+                        <label htmlFor="identifier">Username or Email</label>
+                        <div className="input-wrap">
+                            <span className="input-icon">👤</span>
+                            <input
+                                id="identifier"
+                                type="text"
+                                name="identifier"
+                                placeholder="Enter username or email"
+                                value={identifier}
+                                onChange={e => setIdentifier(e.target.value)}
+                                required
+                            />
+                        </div>
                     </div>
+
                     <div className="input-group">
                         <label htmlFor="password">Password</label>
-                        <input
-                            onChange={(e) => { setPassword(e.target.value) }}
-                            type="password" id="password" name='password' placeholder='Enter password' required />
+                        <div className="input-wrap">
+                            <span className="input-icon">🔒</span>
+                            <input
+                                id="password"
+                                type="password"
+                                name="password"
+                                placeholder="Enter your password"
+                                value={password}
+                                onChange={e => setPassword(e.target.value)}
+                                required
+                            />
+                        </div>
                     </div>
-                    <button className='button primary-button' >Login</button>
+
+                    <div className="forgot-row">
+                        <Link to="/forgot-password">Forgot Password?</Link>
+                    </div>
+
+                    <button className="button primary-button" disabled={loading}>
+                        {loading ? 'Signing in...' : 'Sign In'}
+                    </button>
                 </form>
-                <p>Don't have an account? <Link to={"/register"} >Register</Link> </p>
+
+                {/* Divider */}
+                <div className="divider">OR</div>
+
+                {/* Google Login */}
+                <div className="google-btn-wrap">
+                    <button 
+                        type="button" 
+                        onClick={handleGoogleSignIn}
+                        style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '0.75rem',
+                            width: '100%',
+                            padding: '0.85rem',
+                            backgroundColor: '#fff',
+                            color: '#000',
+                            border: 'none',
+                            borderRadius: '2rem',
+                            fontSize: '1rem',
+                            fontWeight: '600',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s ease',
+                            fontFamily: 'Inter, sans-serif'
+                        }}
+                    >
+                        <img 
+                            src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" 
+                            alt="Google" 
+                            style={{ width: '20px', height: '20px' }}
+                        />
+                        Sign in with Google
+                    </button>
+                </div>
+
+                {/* Footer */}
+                <p className="footer-link">
+                    Don't have an account? <Link to="/register">Create one</Link>
+                </p>
             </div>
         </main>
     )

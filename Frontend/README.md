@@ -1,6 +1,6 @@
 # Frontend Development
 
-This directory contains the React (Vite) frontend for Smart InterviewGenius AI.
+This directory contains the React (Vite) frontend for MockMate AI.
 
 For full project setup instructions, features, and credits, please see the [Main README](../README.md) in the root directory.
 

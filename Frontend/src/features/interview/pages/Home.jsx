@@ -67,8 +67,9 @@ const Home = () => {
 
             {/* Top Navbar */}
             <nav className='top-navbar'>
-                <span className='top-navbar__brand'>🎯 Smart InterviewGenius AI</span>
+                <span className='top-navbar__brand'>🎯 MockMate AI</span>
                 <div className='top-navbar__right'>
+                    <button className='top-navbar__profile' onClick={() => navigate('/profile')}>My Profile</button>
                     {user && <span className='top-navbar__user'>👤 {user.username}</span>}
                     <button className='top-navbar__logout' onClick={onLogout}>Logout</button>
                 </div>
@@ -76,7 +77,7 @@ const Home = () => {
 
             {/* Page Header */}
             <header className='page-header'>
-                <h1>Welcome to <span className='highlight'>Smart InterviewGenius AI</span></h1>
+                <h1>Welcome to <span className='highlight'>MockMate AI</span></h1>
                 <p>Let our AI analyze the job requirements and your unique profile to build a winning strategy.</p>
             </header>
 

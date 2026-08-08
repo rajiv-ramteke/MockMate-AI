@@ -7,9 +7,9 @@ sdk: docker
 pinned: false
 ---
 
-# Smart InterviewGenius AI
+# MockMate AI
 
-Welcome to **Smart InterviewGenius AI**, a modern, AI-powered interview preparation application. This tool helps you prepare for interviews by generating personalized technical and behavioral questions based on your resume.
+Welcome to **MockMate AI**, a modern, AI-powered interview preparation application. This tool helps you prepare for interviews by generating personalized technical and behavioral questions based on your resume.
 
 ## Features
 - ✨ **Completely Custom UI:** Premium Dark Mode, Glassmorphism, and responsive layout.
@@ -30,12 +30,27 @@ Welcome to **Smart InterviewGenius AI**, a modern, AI-powered interview preparat
 2. Ensure you have run `npm install`.
 3. Start the development server with `npm run dev`.
 
+## Deployment
+
+### Deploying on Render
+This project is fully configured to be easily deployed on Render using Docker (which safely handles the Puppeteer and Chromium system dependencies).
+
+1. Push this project to your GitHub repository.
+2. Go to [Render](https://render.com/) and create a new account or log in.
+3. Click on the **New** button and select **Blueprint**.
+4. Connect your GitHub repository. Render will automatically detect the `render.yaml` file and configure the application as a Docker Web Service.
+5. In the Render Dashboard, go to your newly created Web Service and add all the required environment variables:
+   - `MONGO_URI`
+   - `GOOGLE_GENAI_API_KEY`
+   - Any other Firebase credentials or tokens used in your `.env`.
+6. Click **Deploy**. Render will use the provided `Dockerfile` to automatically build the frontend, install the backend dependencies along with Puppeteer, and start your unified server!
+
 ## File Structure
 
 The project is organized into two main workspaces: **Backend** (Node.js/Express) and **Frontend** (React/Vite).
 
 ```text
-Smart InterviewGenius AI/
+MockMate AI/
 ├── Backend/                 # Node.js & Express server
 │   ├── .env                 # Environment variables
 │   ├── server.js            # Server entry point

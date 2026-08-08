@@ -1,0 +1,128 @@
+.share-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.75);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    padding: 1rem;
+    backdrop-filter: blur(4px);
+}
+
+.share-modal {
+    background-color: #161b22;
+    border: 1px solid #30363d;
+    border-radius: 12px;
+    width: 100%;
+    max-width: 500px;
+    padding: 2rem;
+    position: relative;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+    animation: modal-fade-in 0.3s ease-out forwards;
+
+    &__close {
+        position: absolute;
+        top: 1rem;
+        right: 1.5rem;
+        background: transparent;
+        border: none;
+        color: #8b949e;
+        font-size: 1.5rem;
+        cursor: pointer;
+        transition: color 0.2s;
+
+        &:hover {
+            color: #c9d1d9;
+        }
+    }
+
+    h2 {
+        margin: 0 0 0.5rem 0;
+        font-size: 1.5rem;
+        color: #c9d1d9;
+    }
+
+    &__desc {
+        color: #8b949e;
+        font-size: 0.9rem;
+        line-height: 1.5;
+        margin-bottom: 1.5rem;
+    }
+
+    &__alert {
+        padding: 0.75rem 1rem;
+        border-radius: 6px;
+        margin-bottom: 1.5rem;
+        font-size: 0.9rem;
+        
+        &.error {
+            background-color: rgba(248, 81, 73, 0.1);
+            border: 1px solid rgba(248, 81, 73, 0.4);
+            color: #ff7b72;
+        }
+        
+        &.success {
+            background-color: rgba(46, 160, 67, 0.1);
+            border: 1px solid rgba(46, 160, 67, 0.4);
+            color: #3fb950;
+        }
+    }
+
+    &__form {
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            margin-bottom: 1.2rem;
+
+            label {
+                font-size: 0.9rem;
+                font-weight: 500;
+                color: #c9d1d9;
+            }
+
+            input, textarea {
+                background-color: #0d1117;
+                border: 1px solid #30363d;
+                color: #c9d1d9;
+                padding: 0.75rem 1rem;
+                border-radius: 6px;
+                font-family: inherit;
+                font-size: 0.95rem;
+                transition: border-color 0.2s;
+
+                &:focus {
+                    outline: none;
+                    border-color: #58a6ff;
+                }
+
+                &:disabled {
+                    opacity: 0.6;
+                    cursor: not-allowed;
+                }
+            }
+        }
+    }
+
+    &__actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 1rem;
+        margin-top: 2rem;
+    }
+}
+
+@keyframes modal-fade-in {
+    from {
+        opacity: 0;
+        transform: translateY(-20px) scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}

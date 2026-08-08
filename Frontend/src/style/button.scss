@@ -12,6 +12,20 @@
     &.primary-button{
         background-color: #e1034d;
         color: white;
+
+        &:hover {
+            background-color: #c8013f;
+        }
+    }
+
+    &.secondary-button {
+        background-color: transparent;
+        color: #c9d1d9;
+        border: 1px solid #30363d;
+
+        &:hover {
+            background-color: #21262d;
+        }
     }
 
     &:active{
