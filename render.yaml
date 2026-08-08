@@ -3,7 +3,7 @@ services:
     name: smart-interview-genius
     env: docker
     plan: free # Change to standard/pro if needed
-    branch: main
+    branch: master
     envVars:
       - key: PORT
         value: 7860 # Matches Dockerfile EXPOSE and ENV
