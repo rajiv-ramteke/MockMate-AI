@@ -47,6 +47,30 @@ const userSchema = new mongoose.Schema({
 
     verificationOtpExpires: {
         type: Date
+    },
+
+    role: {
+        type: String,
+        enum: ["user", "admin"],
+        default: "user"
+    },
+
+    isBanned: {
+        type: Boolean,
+        default: false
+    },
+
+    bannedReason: {
+        type: String
+    },
+
+    lastLogin: {
+        type: Date
+    },
+
+    createdAt: {
+        type: Date,
+        default: Date.now
     }
 })
 

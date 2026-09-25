@@ -9,6 +9,8 @@ import Home from "./features/interview/pages/Home";
 import Interview from "./features/interview/pages/Interview";
 import ProfileDashboard from "./features/profile/pages/ProfileDashboard";
 import { ProfileProvider } from "./features/profile/profile.context";
+import AdminDashboard from "./features/admin/pages/AdminDashboard";
+import AdminProtected from "./features/admin/components/AdminProtected";
 
 
 export const router = createBrowserRouter([
@@ -43,5 +45,9 @@ export const router = createBrowserRouter([
     {
         path: "/profile",
         element: <Protected><ProfileProvider><ProfileDashboard /></ProfileProvider></Protected>
+    },
+    {
+        path: "/admin",
+        element: <AdminProtected><AdminDashboard /></AdminProtected>
     }
 ])

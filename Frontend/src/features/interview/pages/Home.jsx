@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react'
+import React, { useState, useRef, useEffect } from 'react'
 import "../style/home.scss"
 import { useInterview } from '../hooks/useInterview.js'
 import { useNavigate } from 'react-router'
@@ -12,7 +12,38 @@ const Home = () => {
     const [selfDescription, setSelfDescription] = useState("")
     const [selectedFile, setSelectedFile] = useState(null)
     const [error, setError] = useState("")
+    const [isGenerating, setIsGenerating] = useState(false)
+    const [progress, setProgress] = useState(0)
     const resumeInputRef = useRef()
+
+    const loadingSteps = [
+        "Analyzing resume & job description",
+        "Identifying skill gaps & candidate strengths",
+        "Generating 11 custom interview questions",
+        "Building personalized preparation roadmap",
+        "Finalizing report & AI strategy"
+    ]
+
+    useEffect(() => {
+        let timer;
+        if (isGenerating) {
+            setProgress(5);
+            timer = setInterval(() => {
+                setProgress((prev) => {
+                    if (prev >= 92) return 92; // hold at 92% until complete
+                    return prev + 1;
+                });
+            }, 220);
+        } else {
+            setProgress(0);
+        }
+        return () => clearInterval(timer);
+    }, [isGenerating]);
+
+    const currentStepIndex = Math.min(
+        Math.floor((progress / 95) * loadingSteps.length),
+        loadingSteps.length - 1
+    );
 
     const navigate = useNavigate()
 
@@ -39,13 +70,22 @@ const Home = () => {
             return
         }
         setError("")
+        setIsGenerating(true)
         const data = await generateReport({ jobDescription, selfDescription, resumeFile: selectedFile })
+        
         if (data && data._id) {
-            navigate(`/interview/${data._id}`)
-        } else if (data && data.error) {
-            setError(`Failed: ${data.error}`)
+            setProgress(100);
+            setTimeout(() => {
+                setIsGenerating(false);
+                navigate(`/interview/${data._id}`);
+            }, 300);
         } else {
-            setError("Failed to generate report. Please check your internet and try again.")
+            setIsGenerating(false);
+            if (data && data.error) {
+                setError(`Failed: ${data.error}`)
+            } else {
+                setError("Failed to generate report. Please check your internet and try again.")
+            }
         }
     }
 
@@ -54,10 +94,26 @@ const Home = () => {
         navigate('/login')
     }
 
-    if (loading) {
+    if (isGenerating) {
         return (
             <main className='loading-screen'>
-                <h1>⏳ Generating your interview plan... (may take ~30s)</h1>
+                <div className='loading-screen__card'>
+                    <div className='loading-screen__brain'>🧠</div>
+                    <h2 className='loading-screen__title'>Analyzing Your Profile</h2>
+                    <p className='loading-screen__sub'>
+                        {loadingSteps[currentStepIndex]}<span className='loading-dots'></span>
+                    </p>
+                    <div className='loading-screen__bar'>
+                        <div 
+                            className='loading-screen__fill' 
+                            style={{ 
+                                width: `${progress}%`, 
+                                transition: 'width 0.2s linear' 
+                            }}
+                        />
+                    </div>
+                    <p className='loading-screen__hint'>⚡ AI generation in progress... Please wait</p>
+                </div>
             </main>
         )
     }
@@ -69,6 +125,9 @@ const Home = () => {
             <nav className='top-navbar'>
                 <span className='top-navbar__brand'>🎯 MockMate AI</span>
                 <div className='top-navbar__right'>
+                    {user && user.role === 'admin' && (
+                        <button className='top-navbar__profile' style={{backgroundColor: '#6366f1'}} onClick={() => navigate('/admin')}>👑 Admin Panel</button>
+                    )}
                     <button className='top-navbar__profile' onClick={() => navigate('/profile')}>My Profile</button>
                     {user && <span className='top-navbar__user'>👤 {user.username}</span>}
                     <button className='top-navbar__logout' onClick={onLogout}>Logout</button>
@@ -173,16 +232,22 @@ const Home = () => {
                     <span className='footer-info'>AI-Powered Strategy Generation &bull; Approx 30s</span>
                     {error && <p style={{color: '#ff6b6b', fontSize: '0.85rem', margin: '0 1rem'}}>{error}</p>}
                     <button
+                        disabled={isGenerating}
                         onClick={handleGenerateReport}
                         className='generate-btn'>
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6z" /></svg>
-                        Generate My Interview Strategy
+                        {isGenerating ? 'Generating...' : 'Generate My Interview Strategy'}
                     </button>
                 </div>
             </div>
 
+            {/* Global small loading state for fetching reports */}
+            {loading && !isGenerating && (
+                <div style={{ textAlign: 'center', padding: '2rem', color: '#7d8590' }}>Loading your previous reports...</div>
+            )}
+
             {/* Recent Reports List */}
-            {reports.length > 0 && (
+            {!loading && reports.length > 0 && (
                 <section className='recent-reports'>
                     <h2>My Recent Interview Plans</h2>
                     <ul className='reports-list'>

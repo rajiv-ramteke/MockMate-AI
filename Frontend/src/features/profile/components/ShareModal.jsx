@@ -17,12 +17,22 @@ const ShareModal = ({ isOpen, onClose, interviewReportId, candidateAnswers = [] 
         setError('');
         setSuccess('');
 
+        let finalAnswers = candidateAnswers;
+        if (!finalAnswers || finalAnswers.length === 0) {
+            try {
+                const savedLatest = localStorage.getItem('mockmate_latest_answers');
+                if (savedLatest) {
+                    finalAnswers = JSON.parse(savedLatest);
+                }
+            } catch (e) {}
+        }
+
         try {
             await shareWithProfessorAPI({
                 professorEmail,
                 message,
                 interviewReportId, // If null, the backend handles it gracefully
-                candidateAnswers
+                candidateAnswers: finalAnswers
             });
             setSuccess('Profile successfully shared!');
             setTimeout(() => {

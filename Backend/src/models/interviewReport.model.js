@@ -81,6 +81,19 @@ const technicalQuizSchema = new mongoose.Schema({
     _id: false
 })
 
+const resumeAnalysisSchema = new mongoose.Schema({
+    skillsScore: { type: Number, default: 0 },
+    experienceScore: { type: Number, default: 0 },
+    projectsScore: { type: Number, default: 0 },
+    educationScore: { type: Number, default: 0 },
+    strengths: [ { type: String } ],
+    weaknesses: [ { type: String } ],
+    suggestions: [ { type: String } ],
+    summary: { type: String }
+}, {
+    _id: false
+})
+
 const interviewReportSchema = new mongoose.Schema({
     jobDescription: {
         type: String,
@@ -97,6 +110,7 @@ const interviewReportSchema = new mongoose.Schema({
         min: 0,
         max: 100,
     },
+    resumeAnalysis: resumeAnalysisSchema,
     technicalQuestions: [ technicalQuestionSchema ],
     behavioralQuestions: [ behavioralQuestionSchema ],
     technicalQuiz: [ technicalQuizSchema ],

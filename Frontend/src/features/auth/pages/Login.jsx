@@ -15,21 +15,26 @@ const Login = () => {
     const [error, setError] = useState("")
     const [unverifiedEmail, setUnverifiedEmail] = useState("")
 
+    const [isSubmitting, setIsSubmitting] = useState(false)
+
     const handleSubmit = async (e) => {
         e.preventDefault()
         setError("")
         setUnverifiedEmail("")
+        setIsSubmitting(true)
         try {
             await handleLogin({ identifier, password })
             navigate('/')
         } catch (err) {
             if (err.unverified) setUnverifiedEmail(identifier)
             setError(err.message || "Invalid credentials. Please try again.")
+            setIsSubmitting(false)
         }
     }
 
     const handleGoogleSignIn = async () => {
         try {
+            setIsSubmitting(true)
             const result = await signInWithPopup(auth, googleProvider)
             const token = await result.user.getIdToken()
             await handleGoogleLogin(token)
@@ -39,10 +44,26 @@ const Login = () => {
             if (err.code !== 'auth/popup-closed-by-user') {
                 setError(`Error: ${err.message || 'Google sign-in failed.'}`)
             }
+            setIsSubmitting(false)
         }
     }
 
-    if (loading) return <main className="auth-page" />
+    if (loading || isSubmitting) return (
+        <main className="auth-page">
+            <div style={{
+                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem'
+            }}>
+                <div style={{
+                    width: '40px', height: '40px', borderRadius: '50%',
+                    border: '3px solid rgba(167,139,250,0.2)',
+                    borderTopColor: '#a78bfa',
+                    animation: 'spin 0.8s linear infinite'
+                }} />
+                <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.9rem' }}>Please wait...</p>
+                <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+            </div>
+        </main>
+    )
 
     return (
         <main className="auth-page">
@@ -104,8 +125,8 @@ const Login = () => {
                         <Link to="/forgot-password">Forgot Password?</Link>
                     </div>
 
-                    <button className="button primary-button" disabled={loading}>
-                        {loading ? 'Signing in...' : 'Sign In'}
+                    <button className="button primary-button" disabled={loading || isSubmitting}>
+                        {(loading || isSubmitting) ? 'Signing in...' : 'Sign In'}
                     </button>
                 </form>
 

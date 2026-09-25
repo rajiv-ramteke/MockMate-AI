@@ -7,6 +7,7 @@ import ShareModal from '../../profile/components/ShareModal'
 const MIN_ANSWERS_REQUIRED = 4
 
 const NAV_ITEMS = [
+    { id: 'analysis', label: 'Resume Score & Analysis', icon: (<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>) },
     { id: 'technical', label: 'Technical Questions', icon: (<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="16 18 22 12 16 6" /><polyline points="8 6 2 12 8 18" /></svg>) },
     { id: 'quiz', label: 'Technical Quiz', icon: (<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>) },
     { id: 'behavioral', label: 'Behavioral Questions', icon: (<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /></svg>) },
@@ -14,7 +15,7 @@ const NAV_ITEMS = [
 ]
 
 // ── QuestionCard ───────────────────────────────────────────────────────────────
-const QuestionCard = ({ item, index, evaluateAnswer, onAnswerSubmitted }) => {
+const QuestionCard = ({ item, index, evaluateAnswer, onAnswerSubmitted, isAlreadyAnswered }) => {
     const [open, setOpen] = useState(false)
     const [practiceMode, setPracticeMode] = useState(false)
     const [userAnswer, setUserAnswer] = useState('')
@@ -22,6 +23,8 @@ const QuestionCard = ({ item, index, evaluateAnswer, onAnswerSubmitted }) => {
     const [feedback, setFeedback] = useState(null)
     const [error, setError] = useState(null)
     const [answered, setAnswered] = useState(false)
+
+    const isAnswered = answered || isAlreadyAnswered
 
     // Voice Features State
     const [isSpeaking, setIsSpeaking] = useState(false)
@@ -116,17 +119,28 @@ const QuestionCard = ({ item, index, evaluateAnswer, onAnswerSubmitted }) => {
     }
 
     return (
-        <div className={`q-card ${answered ? 'q-card--answered' : ''}`}>
+        <div className={`q-card ${isAnswered ? 'q-card--answered' : ''}`}>
             <div className='q-card__header' onClick={() => setOpen(o => !o)}>
                 <span className='q-card__index'>Q{index + 1}</span>
                 <p className='q-card__question'>{item.question}</p>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexShrink: 0 }}>
-                    {answered && (
+                    {isAnswered && (
                         <span style={{
-                            fontSize: '0.7rem', color: '#3fb950', fontWeight: 600,
-                            background: 'rgba(63,185,80,0.12)', padding: '2px 8px', borderRadius: '99px',
-                            whiteSpace: 'nowrap'
-                        }}>✓ Answered</span>
+                            fontSize: '0.75rem',
+                            color: '#3fb950',
+                            fontWeight: 700,
+                            background: 'rgba(63, 185, 80, 0.18)',
+                            border: '1px solid #2ea043',
+                            padding: '3px 10px',
+                            borderRadius: '99px',
+                            whiteSpace: 'nowrap',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '4px'
+                        }}>
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                            Answered
+                        </span>
                     )}
                     <span className={`q-card__chevron ${open ? 'q-card__chevron--open' : ''}`}>
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9" /></svg>
@@ -196,38 +210,87 @@ const QuestionCard = ({ item, index, evaluateAnswer, onAnswerSubmitted }) => {
                                 <p>{userAnswer}</p>
                             </div>
                             <div className='feedback-bubble feedback-bubble--ai'>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                    <strong>AI Feedback:</strong>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                                        <strong style={{ fontSize: '1.05rem', color: '#f0f6fc' }}>🎯 AI Evaluation:</strong>
+                                        {feedback.score !== undefined && (
+                                            <span style={{
+                                                padding: '3px 10px',
+                                                borderRadius: '99px',
+                                                fontSize: '0.8rem',
+                                                fontWeight: 700,
+                                                background: feedback.score >= 75 ? 'rgba(63,185,80,0.18)' : feedback.score >= 50 ? 'rgba(210,153,34,0.18)' : 'rgba(248,81,73,0.18)',
+                                                color: feedback.score >= 75 ? '#3fb950' : feedback.score >= 50 ? '#d29922' : '#f85149',
+                                                border: `1px solid ${feedback.score >= 75 ? '#2ea043' : feedback.score >= 50 ? '#bb8009' : '#da3633'}`
+                                            }}>
+                                                Score: {feedback.score}/100 ({feedback.rating || 'Evaluated'})
+                                            </span>
+                                        )}
+                                    </div>
                                     <button 
-                                        onClick={(e) => { e.stopPropagation(); isSpeaking ? stopSpeaking() : speakText(feedback.feedback) }}
-                                        style={{ background: 'transparent', border: 'none', color: '#58a6ff', cursor: 'pointer', fontSize: '0.8rem' }}
+                                        onClick={(e) => { e.stopPropagation(); isSpeaking ? stopSpeaking() : speakText(`${feedback.feedback}. Correct answer: ${feedback.correctAnswer || item.answer}`) }}
+                                        style={{ background: 'transparent', border: 'none', color: '#58a6ff', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 600 }}
                                     >
-                                        {isSpeaking ? '⏹ Stop' : '🔊 Read Feedback'}
+                                        {isSpeaking ? '⏹ Stop' : '🔊 Read Evaluation'}
                                     </button>
                                 </div>
-                                <p>{feedback.feedback}</p>
-                                <div className='feedback-details'>
-                                    <div className='feedback-col feedback-col--strengths'>
-                                        <span className='feedback-tag feedback-tag--positive'>Strengths</span>
-                                        <ul>{feedback.strengths.map((s, i) => <li key={i}>{s}</li>)}</ul>
-                                    </div>
-                                    <div className='feedback-col feedback-col--weaknesses'>
-                                        <span className='feedback-tag feedback-tag--negative'>Areas to Improve</span>
-                                        <ul>{feedback.weaknesses.map((w, i) => <li key={i}>{w}</li>)}</ul>
-                                    </div>
+                                <p style={{ fontSize: '0.95rem', lineHeight: '1.5', color: '#c9d1d9' }}>{feedback.feedback}</p>
+                                
+                                <div className='feedback-details' style={{ marginTop: '1rem' }}>
+                                    {feedback.strengths && feedback.strengths.length > 0 && (
+                                        <div className='feedback-col feedback-col--strengths'>
+                                            <span className='feedback-tag feedback-tag--positive'>✓ What You Did Well</span>
+                                            <ul>{feedback.strengths.map((s, i) => <li key={i}>{s}</li>)}</ul>
+                                        </div>
+                                    )}
+                                    {feedback.weaknesses && feedback.weaknesses.length > 0 && (
+                                        <div className='feedback-col feedback-col--weaknesses'>
+                                            <span className='feedback-tag feedback-tag--negative'>⚠ Areas to Improve</span>
+                                            <ul>{feedback.weaknesses.map((w, i) => <li key={i}>{w}</li>)}</ul>
+                                        </div>
+                                    )}
                                 </div>
-                                <div className='feedback-improvement'>
-                                    <strong>How to improve:</strong>
-                                    <p>{feedback.improvement}</p>
+
+                                {(feedback.improvements || feedback.improvement) && (
+                                    <div className='feedback-improvement' style={{ marginTop: '1rem' }}>
+                                        <strong>🚀 How to Make it a 10/10 Answer:</strong>
+                                        {Array.isArray(feedback.improvements || feedback.improvement) ? (
+                                            <ul style={{ margin: '0.5rem 0 0 1.2rem', padding: 0 }}>
+                                                {(feedback.improvements || feedback.improvement).map((imp, i) => (
+                                                    <li key={i} style={{ marginBottom: '0.35rem', lineHeight: '1.45' }}>{imp}</li>
+                                                ))}
+                                            </ul>
+                                        ) : (
+                                            <p>{feedback.improvements || feedback.improvement}</p>
+                                        )}
+                                    </div>
+                                )}
+
+                                {/* Prominent Correct / Model Answer */}
+                                <div style={{
+                                    marginTop: '1.25rem',
+                                    padding: '1rem 1.25rem',
+                                    borderRadius: '10px',
+                                    background: 'rgba(56, 139, 253, 0.1)',
+                                    border: '1px solid rgba(56, 139, 253, 0.3)'
+                                }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.4rem' }}>
+                                        <span style={{ fontSize: '1.1rem' }}>💡</span>
+                                        <strong style={{ color: '#58a6ff', fontSize: '0.95rem' }}>Ideal / Correct Answer:</strong>
+                                    </div>
+                                    <p style={{ margin: 0, color: '#e6edf3', fontSize: '0.92rem', lineHeight: '1.55' }}>
+                                        {feedback.correctAnswer || item.answer}
+                                    </p>
                                 </div>
                             </div>
+
                             <button className='button secondary-button q-card__practice-btn' onClick={() => { setFeedback(null); setUserAnswer(''); setPracticeMode(true) }}>
-                                Try Again
+                                🔄 Try Answering Again
                             </button>
                         </div>
                     )}
 
-                    {(!practiceMode || feedback) && (
+                    {!practiceMode && !feedback && (
                         <div className='q-card__section' style={{ marginTop: '1rem', borderTop: '1px solid #2a3348', paddingTop: '1rem' }}>
                             <span className='q-card__tag q-card__tag--answer'>Model Answer</span>
                             <p>{item.answer}</p>
@@ -240,16 +303,44 @@ const QuestionCard = ({ item, index, evaluateAnswer, onAnswerSubmitted }) => {
 }
 
 // ── QuizCard ──────────────────────────────────────────────────────────────────
-const QuizCard = ({ item, index }) => {
+const QuizCard = ({ item, index, onAnswerSubmitted }) => {
     const [selectedOption, setSelectedOption] = useState(null)
 
     const isCorrect = selectedOption === item.correctAnswer
 
+    const handleSelectOption = (option) => {
+        if (!selectedOption) {
+            setSelectedOption(option)
+            if (onAnswerSubmitted) {
+                onAnswerSubmitted(item.question, option)
+            }
+        }
+    }
+
     return (
-        <div className={`q-card ${selectedOption ? (isCorrect ? 'q-card--correct' : 'q-card--incorrect') : ''}`}>
+        <div className={`q-card ${selectedOption ? (isCorrect ? 'q-card--correct q-card--answered' : 'q-card--incorrect q-card--answered') : ''}`}>
             <div className='q-card__header' style={{ cursor: 'default' }}>
                 <span className='q-card__index'>Q{index + 1}</span>
                 <p className='q-card__question'>{item.question}</p>
+                {selectedOption && (
+                    <span style={{
+                        fontSize: '0.75rem',
+                        color: '#3fb950',
+                        fontWeight: 700,
+                        background: 'rgba(63, 185, 80, 0.18)',
+                        border: '1px solid #2ea043',
+                        padding: '3px 10px',
+                        borderRadius: '99px',
+                        whiteSpace: 'nowrap',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        flexShrink: 0
+                    }}>
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                        Answered
+                    </span>
+                )}
             </div>
             
             <div className='q-card__body' style={{ display: 'block', borderTop: '1px solid #2a3348', paddingTop: '1rem', marginTop: '0.5rem' }}>
@@ -276,7 +367,7 @@ const QuizCard = ({ item, index }) => {
                             <div 
                                 key={i} 
                                 style={optionStyle}
-                                onClick={() => !selectedOption && setSelectedOption(option)}
+                                onClick={() => !selectedOption && handleSelectOption(option)}
                                 onMouseEnter={(e) => !selectedOption && (e.currentTarget.style.background = '#21262d')}
                                 onMouseLeave={(e) => !selectedOption && (e.currentTarget.style.background = '#161b22')}
                             >
@@ -314,9 +405,147 @@ const RoadMapDay = ({ day }) => (
     </div>
 )
 
+const ResumeAnalysisView = ({ report }) => {
+    const analysis = report.resumeAnalysis || {}
+    const matchScore = report.matchScore || 0
+    const skillsScore = analysis.skillsScore || 0
+    const expScore = analysis.experienceScore || analysis.expScore || 0
+    const projScore = analysis.projectsScore || 0
+    const eduScore = analysis.educationScore || 0
+
+    const scoreColor = matchScore >= 80 ? '#34d399' : matchScore >= 60 ? '#fbbf24' : '#f87171'
+    const circumference = 2 * Math.PI * 45
+    const strokeDashoffset = circumference - (matchScore / 100) * circumference
+
+    const strengths = analysis.strengths?.length ? analysis.strengths : []
+    const weaknesses = analysis.weaknesses?.length ? analysis.weaknesses :
+        (report.skillGaps?.map(g => `Missing or weak: ${g.skill}`) || [])
+    const suggestions = analysis.suggestions?.length ? analysis.suggestions : []
+
+    return (
+        <div className="resume-analysis-view">
+            {/* Hero Score Card */}
+            <div className="hero-score-card">
+                <div className="score-circle-wrapper">
+                    <svg viewBox="0 0 100 100">
+                        <circle className="score-circle-bg" cx="50" cy="50" r="45" />
+                        <circle 
+                            className="score-circle-val" 
+                            cx="50" cy="50" r="45" 
+                            style={{ 
+                                stroke: scoreColor, 
+                                strokeDasharray: circumference, 
+                                strokeDashoffset 
+                            }} 
+                        />
+                    </svg>
+                    <div className="score-center-text">
+                        <span className="num">{matchScore}%</span>
+                        <span className="label">Match</span>
+                    </div>
+                </div>
+
+                <div className="hero-details">
+                    <div className="job-badge">🎯 {report.title || "Job Alignment Analysis"}</div>
+                    <h2>{matchScore >= 80 ? "✨ Strong Candidate Match" : matchScore >= 60 ? "⚡ Moderate Candidate Fit" : "⚠️ Needs Additional Preparation"}</h2>
+                    <p>{analysis.summary || `Candidate profile shows ${matchScore}% alignment with the requirements for this role.`}</p>
+                </div>
+            </div>
+
+            {/* Category Breakdown Bars */}
+            <div className="breakdown-grid">
+                <div className="category-card">
+                    <div className="cat-header">
+                        <span className="cat-title">🎯 Technical Skills</span>
+                        <span className="cat-score" style={{ color: skillsScore >= 80 ? '#34d399' : '#fbbf24' }}>{skillsScore}%</span>
+                    </div>
+                    <div className="progress-bar-bg">
+                        <div className="progress-bar-fill" style={{ width: `${skillsScore}%`, background: 'linear-gradient(90deg, #6366f1, #a855f7)' }} />
+                    </div>
+                </div>
+
+                <div className="category-card">
+                    <div className="cat-header">
+                        <span className="cat-title">💼 Experience Relevance</span>
+                        <span className="cat-score" style={{ color: expScore >= 80 ? '#34d399' : '#fbbf24' }}>{expScore}%</span>
+                    </div>
+                    <div className="progress-bar-bg">
+                        <div className="progress-bar-fill" style={{ width: `${expScore}%`, background: 'linear-gradient(90deg, #3b82f6, #06b6d4)' }} />
+                    </div>
+                </div>
+
+                <div className="category-card">
+                    <div className="cat-header">
+                        <span className="cat-title">🚀 Project Impact</span>
+                        <span className="cat-score" style={{ color: projScore >= 80 ? '#34d399' : '#fbbf24' }}>{projScore}%</span>
+                    </div>
+                    <div className="progress-bar-bg">
+                        <div className="progress-bar-fill" style={{ width: `${projScore}%`, background: 'linear-gradient(90deg, #10b981, #34d399)' }} />
+                    </div>
+                </div>
+
+                <div className="category-card">
+                    <div className="cat-header">
+                        <span className="cat-title">🎓 Education & Domain</span>
+                        <span className="cat-score" style={{ color: eduScore >= 80 ? '#34d399' : '#fbbf24' }}>{eduScore}%</span>
+                    </div>
+                    <div className="progress-bar-bg">
+                        <div className="progress-bar-fill" style={{ width: `${eduScore}%`, background: 'linear-gradient(90deg, #f59e0b, #ef4444)' }} />
+                    </div>
+                </div>
+            </div>
+
+            {/* Strengths & Weaknesses Grid */}
+            <div className="analysis-sections-grid">
+                <div className="analysis-card">
+                    <div className="analysis-card__header strengths">
+                        <span>✅</span> Profile Strengths
+                    </div>
+                    <ul>
+                        {strengths.length > 0 ? strengths.map((s, idx) => (
+                            <li key={idx}>
+                                <span className="bullet-icon">🟢</span>
+                                <span>{s}</span>
+                            </li>
+                        )) : <li style={{ color: '#94a3b8', listStyle: 'none' }}>No strengths data available.</li>}
+                    </ul>
+                </div>
+
+                <div className="analysis-card">
+                    <div className="analysis-card__header weaknesses">
+                        <span>⚠️</span> Gaps & Missing Criteria
+                    </div>
+                    <ul>
+                        {weaknesses.length > 0 ? weaknesses.map((w, idx) => (
+                            <li key={idx}>
+                                <span className="bullet-icon">🔴</span>
+                                <span>{w}</span>
+                            </li>
+                        )) : <li style={{ color: '#94a3b8', listStyle: 'none' }}>No significant gaps identified.</li>}
+                    </ul>
+                </div>
+
+                <div className="analysis-card full-width">
+                    <div className="analysis-card__header suggestions">
+                        <span>💡</span> AI Recommendations to Improve Resume Score
+                    </div>
+                    <ul>
+                        {suggestions.length > 0 ? suggestions.map((tip, idx) => (
+                            <li key={idx}>
+                                <span className="bullet-icon">✨</span>
+                                <span>{tip}</span>
+                            </li>
+                        )) : <li style={{ color: '#94a3b8', listStyle: 'none' }}>No recommendations available.</li>}
+                    </ul>
+                </div>
+            </div>
+        </div>
+    )
+}
+
 // ── Main Component ────────────────────────────────────────────────────────────
 const Interview = () => {
-    const [activeNav, setActiveNav] = useState('technical')
+    const [activeNav, setActiveNav] = useState('analysis')
     const [submittedAnswers, setSubmittedAnswers] = useState([])
     const [isShareModalOpen, setIsShareModalOpen] = useState(false)
     const { report, getReportById, loading, getResumePdf, evaluateAnswer } = useInterview()
@@ -325,14 +554,38 @@ const Interview = () => {
     useEffect(() => {
         if (interviewId) {
             getReportById(interviewId)
+            try {
+                const saved = localStorage.getItem(`mockmate_answers_${interviewId}`)
+                if (saved) {
+                    const parsed = JSON.parse(saved)
+                    if (Array.isArray(parsed)) {
+                        setSubmittedAnswers(parsed)
+                    }
+                }
+            } catch (e) {
+                console.error("Failed to load saved answers", e)
+            }
         }
     }, [interviewId])
 
     const handleAnswerSubmitted = (question, answer) => {
         setSubmittedAnswers(prev => {
             const exists = prev.find(a => a.question === question)
-            if (exists) return prev
-            return [...prev, { question, answer }]
+            let updated;
+            if (exists) {
+                updated = prev.map(a => a.question === question ? { question, answer } : a)
+            } else {
+                updated = [...prev, { question, answer }]
+            }
+            if (interviewId) {
+                try {
+                    localStorage.setItem(`mockmate_answers_${interviewId}`, JSON.stringify(updated))
+                    localStorage.setItem('mockmate_latest_answers', JSON.stringify(updated))
+                } catch (e) {
+                    console.error("Failed to save answers", e)
+                }
+            }
+            return updated
         })
     }
 
@@ -405,16 +658,22 @@ const Interview = () => {
                         <button
                             onClick={handleDownloadResume}
                             className='button primary-button'
-                            disabled={loading}
+                            disabled={loading || !canDownload}
                             style={!canDownload ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
                         >
                             <svg height={"0.8rem"} style={{ marginRight: "0.8rem" }} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M10.6144 17.7956 11.492 15.7854C12.2731 13.9966 13.6789 12.5726 15.4325 11.7942L17.8482 10.7219C18.6162 10.381 18.6162 9.26368 17.8482 8.92277L15.5079 7.88394C13.7092 7.08552 12.2782 5.60881 11.5105 3.75894L10.6215 1.61673C10.2916.821765 9.19319.821767 8.8633 1.61673L7.97427 3.75892C7.20657 5.60881 5.77553 7.08552 3.97685 7.88394L1.63658 8.92277C.868537 9.26368.868536 10.381 1.63658 10.7219L4.0523 11.7942C5.80589 12.5726 7.21171 13.9966 7.99275 15.7854L8.8704 17.7956C9.20776 18.5682 10.277 18.5682 10.6144 17.7956ZM19.4014 22.6899 19.6482 22.1242C20.0882 21.1156 20.8807 20.3125 21.8695 19.8732L22.6299 19.5353C23.0412 19.3526 23.0412 18.7549 22.6299 18.5722L21.9121 18.2532C20.8978 17.8026 20.0911 16.9698 19.6586 15.9269L19.4052 15.3156C19.2285 14.8896 18.6395 14.8896 18.4628 15.3156L18.2094 15.9269C17.777 16.9698 16.9703 17.8026 15.956 18.2532L15.2381 18.5722C14.8269 18.7549 14.8269 19.3526 15.2381 19.5353L15.9985 19.8732C16.9874 20.3125 17.7798 21.1156 18.2198 22.1242L18.4667 22.6899C18.6473 23.104 19.2207 23.104 19.4014 22.6899Z"></path></svg>
-                            {loading ? 'Generating...' : canDownload ? 'Download Resume' : '🔒 Download Resume'}
+                            {loading ? 'Generating...' : canDownload ? 'Download Regenerated Resume' : '🔒 Regenerate Resume'}
                         </button>
                         <button
                             onClick={() => setIsShareModalOpen(true)}
                             className='button secondary-button'
-                            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', marginTop: '1rem' }}
+                            style={{ 
+                                display: 'flex', 
+                                alignItems: 'center', 
+                                justifyContent: 'center', 
+                                gap: '0.5rem', 
+                                marginTop: '0.5rem'
+                            }}
                         >
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>
                             Share with Professor
@@ -426,6 +685,16 @@ const Interview = () => {
 
                 {/* ── Center Content ── */}
                 <main className='interview-content'>
+                    {activeNav === 'analysis' && (
+                        <section>
+                            <div className='content-header'>
+                                <h2>Candidate Resume Analysis & Score</h2>
+                                <span className='content-header__count'>Match Score: {report.matchScore}%</span>
+                            </div>
+                            <ResumeAnalysisView report={report} />
+                        </section>
+                    )}
+
                     {activeNav === 'technical' && (
                         <section>
                             <div className='content-header'>
@@ -434,7 +703,14 @@ const Interview = () => {
                             </div>
                             <div className='q-list'>
                                 {report.technicalQuestions.map((q, i) => (
-                                    <QuestionCard key={i} item={q} index={i} evaluateAnswer={evaluateAnswer} onAnswerSubmitted={handleAnswerSubmitted} />
+                                    <QuestionCard 
+                                        key={i} 
+                                        item={q} 
+                                        index={i} 
+                                        evaluateAnswer={evaluateAnswer} 
+                                        onAnswerSubmitted={handleAnswerSubmitted} 
+                                        isAlreadyAnswered={submittedAnswers.some(a => a.question === q.question)}
+                                    />
                                 ))}
                             </div>
                         </section>
@@ -448,7 +724,12 @@ const Interview = () => {
                             </div>
                             <div className='q-list'>
                                 {(report.technicalQuiz || []).map((q, i) => (
-                                    <QuizCard key={i} item={q} index={i} />
+                                    <QuizCard 
+                                        key={i} 
+                                        item={q} 
+                                        index={i} 
+                                        onAnswerSubmitted={handleAnswerSubmitted}
+                                    />
                                 ))}
                                 {(!report.technicalQuiz || report.technicalQuiz.length === 0) && (
                                     <p style={{ color: '#8b949e', textAlign: 'center', padding: '2rem' }}>No quiz questions available for this report.</p>
@@ -466,7 +747,14 @@ const Interview = () => {
                             </div>
                             <div className='q-list'>
                                 {report.behavioralQuestions.map((q, i) => (
-                                    <QuestionCard key={i} item={q} index={i} evaluateAnswer={evaluateAnswer} onAnswerSubmitted={handleAnswerSubmitted} />
+                                    <QuestionCard 
+                                        key={i} 
+                                        item={q} 
+                                        index={i} 
+                                        evaluateAnswer={evaluateAnswer} 
+                                        onAnswerSubmitted={handleAnswerSubmitted} 
+                                        isAlreadyAnswered={submittedAnswers.some(a => a.question === q.question)}
+                                    />
                                 ))}
                             </div>
                         </section>

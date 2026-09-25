@@ -472,3 +472,104 @@ $font-stack:     system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Robot
         }
     }
 }
+
+// ── Loading Screen ────────────────────────────────────────────────────────────
+@keyframes pulse-brain {
+    0%, 100% { transform: scale(1); }
+    50%       { transform: scale(1.15); }
+}
+
+@keyframes shimmer {
+    0%   { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+}
+
+@keyframes dots {
+    0%   { content: '';    }
+    25%  { content: '.';   }
+    50%  { content: '..';  }
+    75%  { content: '...'; }
+    100% { content: '';    }
+}
+
+.loading-screen {
+    min-height: 100vh;
+    background: $bg-page;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: $font-stack;
+
+    &__card {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 1rem;
+        background: $bg-card;
+        border: 1px solid $border-color;
+        border-radius: 20px;
+        padding: 3rem 3.5rem;
+        max-width: 420px;
+        width: 90%;
+        text-align: center;
+        box-shadow: 0 8px 40px rgba(0,0,0,0.4);
+    }
+
+    &__brain {
+        font-size: 3.5rem;
+        animation: pulse-brain 1.5s ease-in-out infinite;
+        line-height: 1;
+    }
+
+    &__title {
+        margin: 0;
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: $text-primary;
+        letter-spacing: 0.02em;
+    }
+
+    &__sub {
+        margin: 0;
+        font-size: 0.95rem;
+        color: $text-muted;
+    }
+
+    &__bar {
+        width: 100%;
+        height: 6px;
+        background: $bg-panel;
+        border-radius: 99px;
+        overflow: hidden;
+        position: relative;
+    }
+
+    &__fill {
+        height: 100%;
+        width: 100%;
+        background: linear-gradient(90deg, $accent, #a855f7, $accent-alt);
+        background-size: 200% 100%;
+        border-radius: 99px;
+        position: relative;
+        overflow: hidden;
+
+        &::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.35), transparent);
+            animation: shimmer 1.4s infinite;
+        }
+    }
+
+    &__hint {
+        margin: 0;
+        font-size: 0.8rem;
+        color: darken($text-muted, 10%);
+    }
+}
+
+.loading-dots::after {
+    content: '';
+    animation: dots 1.5s steps(4, end) infinite;
+}

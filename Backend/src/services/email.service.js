@@ -123,6 +123,28 @@ async function sendProfileToProfessor(professorEmail, studentData, pdfBuffer) {
         });
     }
 
+    var docList = Array.isArray(p.documents) ? p.documents : [];
+    if (docList.length > 0) {
+        profileHtml += h2('📄 Uploaded Documents & Certificates');
+        docList.forEach(function(doc, idx) {
+            var sizeKb = doc.size ? (doc.size / 1024).toFixed(1) + ' KB' : 'N/A';
+            var fmt = (doc.format || 'file').toUpperCase();
+            var docName = doc.title || ('Document_' + (idx + 1));
+            var uploadDate = doc.uploadedAt ? new Date(doc.uploadedAt).toLocaleDateString() : 'Recently';
+
+            profileHtml += card(
+                '<p style="margin:0 0 6px 0;font-size:1.05rem;"><strong style="color:#0366d6;">📌 Document Uploaded:</strong> <strong style="color:#24292e;">' + safe(docName) + '</strong></p>' +
+                '<ul style="margin:4px 0 0 0;padding-left:20px;color:#555;font-size:0.9rem;line-height:1.6;">' +
+                '<li><strong>Document Name:</strong> ' + safe(docName) + '</li>' +
+                '<li><strong>File Format:</strong> ' + safe(fmt) + '</li>' +
+                '<li><strong>File Size:</strong> ' + safe(sizeKb) + '</li>' +
+                '<li><strong>Upload Date:</strong> ' + safe(uploadDate) + '</li>' +
+                '<li><strong>Attachment Status:</strong> Attached as file to this email (<code>' + safe(docName.replace(/[^a-zA-Z0-9_-]/g, '_')) + '.' + safe(fmt.toLowerCase()) + '</code>)</li>' +
+                '</ul>'
+            );
+        });
+    }
+
     /* ────────────────────────────────────────────
        PART 2: Interview Report Sections
     ──────────────────────────────────────────── */
@@ -211,15 +233,26 @@ async function sendProfileToProfessor(professorEmail, studentData, pdfBuffer) {
     else if (studentData.score < 60) scoreColor = '#d73a49';
 
     var summaryRows =
-        '<tr><td style="padding:5px 0;width:160px;color:#555;font-weight:600;">Student Name</td><td><strong>' + safe(studentName) + '</strong></td></tr>' +
+        '<tr><td style="padding:5px 0;width:180px;color:#555;font-weight:600;">Student Name</td><td><strong>' + safe(studentName) + '</strong></td></tr>' +
         '<tr><td style="padding:5px 0;color:#555;font-weight:600;">Email</td><td>' + safe(studentData.email) + '</td></tr>';
 
     if (p.phone) summaryRows += '<tr><td style="padding:5px 0;color:#555;font-weight:600;">Phone</td><td>' + safe(p.phone) + '</td></tr>';
+    if (p.linkedin) summaryRows += '<tr><td style="padding:5px 0;color:#555;font-weight:600;">LinkedIn</td><td><a href="' + safe(p.linkedin) + '" style="color:#0366d6;">' + safe(p.linkedin) + '</a></td></tr>';
+    if (p.github) summaryRows += '<tr><td style="padding:5px 0;color:#555;font-weight:600;">GitHub</td><td><a href="' + safe(p.github) + '" style="color:#0366d6;">' + safe(p.github) + '</a></td></tr>';
+    if (p.portfolio) summaryRows += '<tr><td style="padding:5px 0;color:#555;font-weight:600;">Portfolio</td><td><a href="' + safe(p.portfolio) + '" style="color:#0366d6;">' + safe(p.portfolio) + '</a></td></tr>';
+    if (p.gender) summaryRows += '<tr><td style="padding:5px 0;color:#555;font-weight:600;">Gender</td><td>' + safe(p.gender) + '</td></tr>';
+    if (p.address) summaryRows += '<tr><td style="padding:5px 0;color:#555;font-weight:600;">Address</td><td>' + safe(p.address) + '</td></tr>';
+
     if (studentData.score !== null && studentData.score !== undefined) {
         summaryRows += '<tr><td style="padding:5px 0;color:#555;font-weight:600;">AI Match Score</td><td><strong style="color:' + scoreColor + ';font-size:1.1rem;">' + safe(studentData.score) + '%</strong></td></tr>';
     }
     if (r.title) summaryRows += '<tr><td style="padding:5px 0;color:#555;font-weight:600;">Target Role</td><td>' + safe(r.title) + '</td></tr>';
     summaryRows += '<tr><td style="padding:5px 0;color:#555;font-weight:600;">Questions Answered</td><td>' + Object.keys(candidateAnswerMap).length + ' of ' + techQs.length + ' technical questions</td></tr>';
+    
+    if (docList.length > 0) {
+        var docNames = docList.map(function(d) { return safe(d.title); }).join(', ');
+        summaryRows += '<tr><td style="padding:5px 0;color:#555;font-weight:600;">Uploaded Documents</td><td><strong style="color:#0366d6;">' + docNames + '</strong> (' + docList.length + ' file(s) attached)</td></tr>';
+    }
     if (studentData.message) {
         summaryRows += '<tr><td style="padding:5px 0;color:#555;font-weight:600;vertical-align:top;">Message</td><td style="font-style:italic;color:#555;">"' + safe(studentData.message) + '"</td></tr>';
     }
@@ -234,7 +267,7 @@ async function sendProfileToProfessor(professorEmail, studentData, pdfBuffer) {
 
     var pdfNote = pdfBuffer
         ? '<div style="background:#e6f3ff;border:1px solid #0366d6;border-radius:8px;padding:14px 18px;margin-top:30px;">' +
-          '<strong style="color:#0366d6;">📄 Attachment:</strong> An AI-generated resume tailored to this student is attached as a PDF.</div>'
+          '<strong style="color:#0366d6;">📄 Attachments:</strong> Tailored Resume PDF and all uploaded student documents are attached.</div>'
         : '';
 
     var htmlContent =
@@ -249,7 +282,7 @@ async function sendProfileToProfessor(professorEmail, studentData, pdfBuffer) {
         // Body
         '<div style="background:white;border:1px solid #e1e4e8;border-top:none;padding:28px 30px;border-radius:0 0 10px 10px;">' +
         '<p style="margin-top:0;">Dear Professor,</p>' +
-        '<p>Your student <strong>' + safe(studentName) + '</strong> has shared their complete MockMate AI profile, mock interview performance, and AI-generated resume for your evaluation.</p>' +
+        '<p>Your student <strong>' + safe(studentName) + '</strong> has shared their complete MockMate AI profile, uploaded documents/certificates, mock interview performance, and AI-generated resume for your evaluation.</p>' +
 
         // Summary table
         '<div style="background:#f6f8fa;border:1px solid #e1e4e8;border-radius:8px;padding:16px 20px;margin:20px 0;">' +
@@ -258,7 +291,7 @@ async function sendProfileToProfessor(professorEmail, studentData, pdfBuffer) {
         '</div>' +
 
         // Part 1 Profile
-        '<h1 style="font-size:1.3rem;color:#24292e;border-bottom:2px solid #e1e4e8;padding-bottom:8px;margin-top:35px;">PART 1 — Student Profile</h1>' +
+        '<h1 style="font-size:1.3rem;color:#24292e;border-bottom:2px solid #e1e4e8;padding-bottom:8px;margin-top:35px;">PART 1 — Student Profile & Uploads</h1>' +
         (profileHtml || '<p style="color:#888;">No profile data filled in yet.</p>') +
 
         // Part 2 Interview
@@ -277,16 +310,41 @@ async function sendProfileToProfessor(professorEmail, studentData, pdfBuffer) {
     var mailOptions = {
         from: '"MockMate AI" <' + process.env.SMTP_USER + '>',
         to: professorEmail,
-        subject: '[SmartIG AI] Full Report — ' + studentName + (r.title ? ' | ' + r.title : ''),
+        subject: '[SmartIG AI] Full Student Profile & Report — ' + studentName + (r.title ? ' | ' + r.title : ''),
         html: htmlContent
     };
 
+    var attachments = [];
+
     if (pdfBuffer) {
-        mailOptions.attachments = [{
-            filename: studentName.replace(/\s+/g, '_') + '_Resume.pdf',
+        attachments.push({
+            filename: studentName.replace(/\s+/g, '_') + '_Tailored_Resume.pdf',
             content: pdfBuffer,
             contentType: 'application/pdf'
-        }];
+        });
+    }
+
+    docList.forEach(function(doc, idx) {
+        if (doc && doc.base64Data) {
+            try {
+                var base64Content = doc.base64Data.includes(',') ? doc.base64Data.split(',')[1] : doc.base64Data;
+                var buffer = Buffer.from(base64Content, 'base64');
+                var ext = (doc.format || 'pdf').toLowerCase().replace('.', '');
+                var mimeType = ext === 'pdf' ? 'application/pdf' : ext === 'png' ? 'image/png' : ext === 'jpg' || ext === 'jpeg' ? 'image/jpeg' : 'application/octet-stream';
+                var safeTitle = (doc.title || ('Document_' + (idx + 1))).replace(/[^a-zA-Z0-9_-]/g, '_');
+                attachments.push({
+                    filename: safeTitle + '.' + ext,
+                    content: buffer,
+                    contentType: mimeType
+                });
+            } catch (e) {
+                console.error("Failed to attach uploaded document:", doc.title, e.message);
+            }
+        }
+    });
+
+    if (attachments.length > 0) {
+        mailOptions.attachments = attachments;
     }
 
     await transporter.sendMail(mailOptions);

@@ -2,19 +2,23 @@ import axios from "axios"
 
 
 const api = axios.create({
-    baseURL: import.meta.env.DEV ? "http://localhost:3000" : "",
+    baseURL: import.meta.env.VITE_API_URL || (import.meta.env.DEV ? "http://localhost:3000" : ""),
     withCredentials: true
 })
 
-export async function register({ username, email, password }) {
-    try {
-        const response = await api.post('/api/auth/register', {
-            username, email, password
-        })
-        return response.data
-    } catch (err) {
-        throw err.response?.data || err
+api.interceptors.response.use(
+    response => response,
+    error => {
+        if (!error.response) {
+            return Promise.reject({ message: "Network Error: Unable to connect to server. Please verify Backend is running." })
+        }
+        return Promise.reject(error.response?.data || error)
     }
+)
+
+export async function register({ username, email, password }) {
+    const response = await api.post('/api/auth/register', { username, email, password })
+    return response.data
 }
 
 export async function login({ identifier, password }) {

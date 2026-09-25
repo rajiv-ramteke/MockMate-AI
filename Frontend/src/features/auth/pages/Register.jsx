@@ -39,7 +39,22 @@ const Register = () => {
         }
     }
 
-    if (loading) return <main className="auth-page" />
+    if (loading) return (
+        <main className="auth-page">
+            <div style={{
+                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem'
+            }}>
+                <div style={{
+                    width: '40px', height: '40px', borderRadius: '50%',
+                    border: '3px solid rgba(167,139,250,0.2)',
+                    borderTopColor: '#a78bfa',
+                    animation: 'spin 0.8s linear infinite'
+                }} />
+                <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.9rem' }}>Please wait...</p>
+                <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+            </div>
+        </main>
+    )
 
     return (
         <main className="auth-page">

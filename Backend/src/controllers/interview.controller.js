@@ -9,17 +9,21 @@ const interviewReportModel = require("../models/interviewReport.model")
  */
 async function generateInterViewReportController(req, res) {
     try {
-        if (!req.file) {
-            return res.status(400).json({ message: "Please upload a resume PDF file." })
-        }
-
-        const pdfDoc = new PDFParse(Uint8Array.from(req.file.buffer))
-        const resumeData = await pdfDoc.getText()
-        const resumeContent = resumeData.text || ""
         const { selfDescription, jobDescription } = req.body
 
         if (!jobDescription) {
             return res.status(400).json({ message: "Job description is required." })
+        }
+
+        if (!req.file && !selfDescription) {
+            return res.status(400).json({ message: "Please upload a resume PDF file or write a self description." })
+        }
+
+        let resumeContent = ""
+        if (req.file) {
+            const pdfDoc = new PDFParse(Uint8Array.from(req.file.buffer))
+            const resumeData = await pdfDoc.getText()
+            resumeContent = resumeData.text || ""
         }
 
         const interViewReportByAi = await generateInterviewReport({
@@ -103,6 +107,12 @@ async function generateResumePdfController(req, res) {
     try {
         const { interviewReportId } = req.params
         const { candidateAnswers = [] } = req.body
+
+        if (!candidateAnswers || candidateAnswers.length < 4) {
+            return res.status(400).json({
+                message: "Please answer at least 4 interview questions before regenerating your customized resume."
+            })
+        }
 
         const interviewReport = await interviewReportModel.findById(interviewReportId)
 
