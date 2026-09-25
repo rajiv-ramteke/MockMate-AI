@@ -2,6 +2,7 @@ const express = require("express")
 const cookieParser = require("cookie-parser")
 const cors = require("cors")
 const path = require("path")
+const fs = require("fs")
 
 const app = express()
 
@@ -33,12 +34,13 @@ app.use("/api/profile", profileRouter)
 app.use("/api/share", shareRouter)
 app.use("/api/admin", adminRouter)
 
-/* Serve Frontend in Production/Docker */
+/* Serve Frontend in Production/Docker (only if dist folder exists) */
 const frontendDistPath = path.join(__dirname, "../../Frontend/dist")
-app.use(express.static(frontendDistPath))
-
-app.get(/(.*)/, (req, res) => {
-    res.sendFile(path.join(frontendDistPath, "index.html"))
-})
+if (fs.existsSync(frontendDistPath)) {
+    app.use(express.static(frontendDistPath))
+    app.get(/(.*)/, (req, res) => {
+        res.sendFile(path.join(frontendDistPath, "index.html"))
+    })
+}
 
 module.exports = app
