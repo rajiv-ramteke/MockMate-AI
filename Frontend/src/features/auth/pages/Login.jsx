@@ -42,7 +42,8 @@ const Login = () => {
         } catch (err) {
             console.error(err)
             if (err.code !== 'auth/popup-closed-by-user') {
-                setError(`Error: ${err.message || 'Google sign-in failed.'}`)
+                const msg = typeof err === 'string' ? err : (err.message || err.error || (typeof err === 'object' ? JSON.stringify(err) : 'Google sign-in failed.'))
+                setError(`Error: ${msg}`)
             }
             setIsSubmitting(false)
         }
