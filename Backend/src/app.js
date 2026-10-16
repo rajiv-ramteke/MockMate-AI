@@ -34,6 +34,11 @@ app.use("/api/profile", profileRouter)
 app.use("/api/share", shareRouter)
 app.use("/api/admin", adminRouter)
 
+/* Health check endpoint — used by UptimeRobot to keep server awake */
+app.get("/health", (req, res) => {
+    res.status(200).json({ status: "ok", timestamp: new Date().toISOString() })
+})
+
 /* Serve Frontend in Production/Docker (only if dist folder exists) */
 const frontendDistPath = path.join(__dirname, "../../Frontend/dist")
 if (fs.existsSync(frontendDistPath)) {

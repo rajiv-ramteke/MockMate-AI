@@ -102,7 +102,11 @@ const QuestionCard = ({ item, index, evaluateAnswer, onAnswerSubmitted, isAlread
         setIsEvaluating(true)
         setError(null)
         try {
-            const result = await evaluateAnswer({ question: item.question, answer: userAnswer })
+            const result = await evaluateAnswer({ 
+                question: item.question, 
+                answer: userAnswer,
+                expectedAnswer: item.answer 
+            })
             if (result) {
                 setFeedback(result)
                 if (!answered) {
@@ -163,14 +167,39 @@ const QuestionCard = ({ item, index, evaluateAnswer, onAnswerSubmitted, isAlread
                         <p>{item.intention}</p>
                     </div>
 
-                    {!practiceMode && !feedback && (
-                        <button className='button secondary-button q-card__practice-btn' onClick={() => setPracticeMode(true)}>
-                            💬 Practice Answering
-                        </button>
+                    {!practiceMode && !feedback && !isAnswered && (
+                        <div style={{
+                            marginTop: '1rem',
+                            padding: '0.85rem 1.15rem',
+                            background: 'rgba(22, 27, 34, 0.85)',
+                            borderRadius: '8px',
+                            border: '1px dashed #30363d',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            gap: '1rem',
+                            flexWrap: 'wrap'
+                        }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#8b949e', fontSize: '0.88rem' }}>
+                                <span style={{ fontSize: '1.1rem' }}>🔒</span>
+                                <span><strong>Model Answer is locked:</strong> Submit your answer first to reveal the model answer & AI evaluation.</span>
+                            </div>
+                            <button 
+                                className='button primary-button' 
+                                style={{ padding: '7px 16px', fontSize: '0.85rem', borderRadius: '6px', cursor: 'pointer' }} 
+                                onClick={() => setPracticeMode(true)}
+                            >
+                                ✍️ Answer Question
+                            </button>
+                        </div>
                     )}
 
                     {practiceMode && !feedback && (
                         <div className='q-card__practice-area'>
+                            <div style={{ fontSize: '0.82rem', color: '#8b949e', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                <span>🔒</span>
+                                <span>The model answer will unlock after you submit your response.</span>
+                            </div>
                             <textarea
                                 className='q-card__textarea'
                                 placeholder='Type your answer here or use the microphone as if you are in a real interview...'
@@ -290,9 +319,18 @@ const QuestionCard = ({ item, index, evaluateAnswer, onAnswerSubmitted, isAlread
                         </div>
                     )}
 
-                    {!practiceMode && !feedback && (
+                    {isAnswered && !feedback && !practiceMode && (
                         <div className='q-card__section' style={{ marginTop: '1rem', borderTop: '1px solid #2a3348', paddingTop: '1rem' }}>
-                            <span className='q-card__tag q-card__tag--answer'>Model Answer</span>
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                                <span className='q-card__tag q-card__tag--answer'>✓ Model Answer (Unlocked)</span>
+                                <button 
+                                    className='button secondary-button' 
+                                    style={{ padding: '4px 12px', fontSize: '0.8rem', borderRadius: '6px' }} 
+                                    onClick={() => setPracticeMode(true)}
+                                >
+                                    🔄 Practice Again
+                                </button>
+                            </div>
                             <p>{item.answer}</p>
                         </div>
                     )}
@@ -303,26 +341,76 @@ const QuestionCard = ({ item, index, evaluateAnswer, onAnswerSubmitted, isAlread
 }
 
 // ── QuizCard ──────────────────────────────────────────────────────────────────
-const QuizCard = ({ item, index, onAnswerSubmitted }) => {
-    const [selectedOption, setSelectedOption] = useState(null)
+const cleanOptionText = (opt) => {
+    if (typeof opt !== 'string') return opt || ''
+    return opt
+        .replace(/^([A-Da-d0-9][.)\s]\s*)+/g, '')
+        .replace(/^(\([A-Da-d0-9]\)\s*)+/g, '')
+        .trim()
+}
 
-    const isCorrect = selectedOption === item.correctAnswer
+const isOptionCorrect = (opt, correctAns, idx) => {
+    if (!correctAns || !opt) return false
+    const strOpt = String(opt).trim()
+    const strAns = String(correctAns).trim()
+    if (strOpt === strAns) return true
+
+    const cleanOpt = cleanOptionText(strOpt).toLowerCase()
+    const cleanAns = cleanOptionText(strAns).toLowerCase()
+    if (cleanOpt && cleanAns && cleanOpt === cleanAns) return true
+
+    const letter = String.fromCharCode(65 + idx)
+    const ansLetterMatch = strAns.match(/^(\(?([A-Da-d])\)?|[A-Da-d]\.)$/)
+    if (ansLetterMatch && (ansLetterMatch[2] || ansLetterMatch[1]).toUpperCase().replace(/[^A-D]/g, '') === letter) return true
+    if (strAns.toUpperCase() === letter || strAns.toUpperCase() === `${letter}.`) return true
+
+    return false
+}
+
+const QuizCard = ({ item, index, savedAnswer, onAnswerSubmitted }) => {
+    const [selectedOption, setSelectedOption] = useState(savedAnswer || null)
+    const [isSubmitted, setIsSubmitted] = useState(Boolean(savedAnswer))
+
+    useEffect(() => {
+        if (savedAnswer && !isSubmitted) {
+            setSelectedOption(savedAnswer)
+            setIsSubmitted(true)
+        }
+    }, [savedAnswer])
+
+    const correctOption = Array.isArray(item.options)
+        ? item.options.find((opt, idx) => isOptionCorrect(opt, item.correctAnswer, idx))
+        : null
+
+    const isCorrect = isSubmitted && selectedOption !== null && (
+        selectedOption === item.correctAnswer ||
+        isOptionCorrect(selectedOption, item.correctAnswer, item.options?.indexOf(selectedOption))
+    )
 
     const handleSelectOption = (option) => {
-        if (!selectedOption) {
+        if (!isSubmitted) {
             setSelectedOption(option)
-            if (onAnswerSubmitted) {
-                onAnswerSubmitted(item.question, option)
-            }
         }
     }
 
+    const handleSubmit = () => {
+        if (!selectedOption || isSubmitted) return
+        setIsSubmitted(true)
+        if (onAnswerSubmitted) {
+            onAnswerSubmitted(item.question, selectedOption)
+        }
+    }
+
+    const correctDisplayAnswer = correctOption 
+        ? cleanOptionText(correctOption) 
+        : cleanOptionText(item.correctAnswer)
+
     return (
-        <div className={`q-card ${selectedOption ? (isCorrect ? 'q-card--correct q-card--answered' : 'q-card--incorrect q-card--answered') : ''}`}>
+        <div className={`q-card ${isSubmitted ? (isCorrect ? 'q-card--correct q-card--answered' : 'q-card--incorrect q-card--answered') : ''}`}>
             <div className='q-card__header' style={{ cursor: 'default' }}>
                 <span className='q-card__index'>Q{index + 1}</span>
                 <p className='q-card__question'>{item.question}</p>
-                {selectedOption && (
+                {isSubmitted && (
                     <span style={{
                         fontSize: '0.75rem',
                         color: '#3fb950',
@@ -347,40 +435,105 @@ const QuizCard = ({ item, index, onAnswerSubmitted }) => {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                     {item.options.map((option, i) => {
                         const isSelected = selectedOption === option
-                        const isActualCorrect = option === item.correctAnswer
-                        let optionStyle = { padding: '10px 14px', borderRadius: '8px', cursor: 'pointer', border: '1px solid #2a3348', background: '#161b22', transition: 'all 0.2s', fontSize: '0.9rem' }
+                        const isActualCorrect = isOptionCorrect(option, item.correctAnswer, i)
+                        let optionStyle = {
+                            padding: '10px 14px',
+                            borderRadius: '8px',
+                            cursor: isSubmitted ? 'not-allowed' : 'pointer',
+                            pointerEvents: isSubmitted ? 'none' : 'auto',
+                            border: '1px solid #2a3348',
+                            background: '#161b22',
+                            transition: 'all 0.2s',
+                            fontSize: '0.9rem',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between'
+                        }
                         
-                        if (selectedOption) {
-                            optionStyle.cursor = 'default'
+                        if (isSubmitted) {
                             if (isActualCorrect) {
                                 optionStyle.borderColor = '#3fb950'
-                                optionStyle.background = 'rgba(63,185,80,0.1)'
+                                optionStyle.background = 'rgba(63,185,80,0.15)'
+                                optionStyle.color = '#3fb950'
+                                optionStyle.fontWeight = 600
                             } else if (isSelected) {
                                 optionStyle.borderColor = '#f85149'
-                                optionStyle.background = 'rgba(248,81,73,0.1)'
+                                optionStyle.background = 'rgba(248,81,73,0.15)'
+                                optionStyle.color = '#f85149'
                             } else {
-                                optionStyle.opacity = 0.5
+                                optionStyle.opacity = 0.4
                             }
+                        } else if (isSelected) {
+                            optionStyle.borderColor = '#a855f7'
+                            optionStyle.background = 'rgba(168, 85, 247, 0.15)'
+                            optionStyle.boxShadow = '0 0 0 1px #a855f7'
                         }
 
                         return (
                             <div 
                                 key={i} 
                                 style={optionStyle}
-                                onClick={() => !selectedOption && handleSelectOption(option)}
-                                onMouseEnter={(e) => !selectedOption && (e.currentTarget.style.background = '#21262d')}
-                                onMouseLeave={(e) => !selectedOption && (e.currentTarget.style.background = '#161b22')}
+                                onClick={() => handleSelectOption(option)}
+                                onMouseEnter={(e) => !isSubmitted && !isSelected && (e.currentTarget.style.background = '#21262d')}
+                                onMouseLeave={(e) => !isSubmitted && !isSelected && (e.currentTarget.style.background = '#161b22')}
                             >
-                                <span style={{ marginRight: '10px', fontWeight: 'bold', color: '#8b949e' }}>{String.fromCharCode(65 + i)}.</span>
-                                {option}
+                                <div style={{ display: 'flex', alignItems: 'center' }}>
+                                    <span style={{ marginRight: '10px', fontWeight: 'bold', color: isSelected && !isSubmitted ? '#c084fc' : '#8b949e' }}>
+                                        {String.fromCharCode(65 + i)}.
+                                    </span>
+                                    <span>{cleanOptionText(option)}</span>
+                                </div>
+                                {isSubmitted && isActualCorrect && (
+                                    <span style={{ fontSize: '0.8rem', color: '#3fb950', fontWeight: 600 }}>✓ Correct</span>
+                                )}
+                                {isSubmitted && isSelected && !isActualCorrect && (
+                                    <span style={{ fontSize: '0.8rem', color: '#f85149', fontWeight: 600 }}>✗ Your Choice</span>
+                                )}
                             </div>
                         )
                     })}
                 </div>
                 
-                {selectedOption && (
-                    <div style={{ marginTop: '1rem', padding: '10px', borderRadius: '8px', background: isCorrect ? 'rgba(63,185,80,0.1)' : 'rgba(248,81,73,0.1)', color: isCorrect ? '#3fb950' : '#f85149', fontSize: '0.9rem' }}>
-                        {isCorrect ? '✨ Correct! Great job.' : `❌ Incorrect. The correct answer is: ${item.correctAnswer}`}
+                {!isSubmitted ? (
+                    <div style={{ marginTop: '1rem', display: 'flex', justifyContent: 'flex-end' }}>
+                        <button 
+                            type='button'
+                            className='button primary-button'
+                            onClick={handleSubmit}
+                            disabled={!selectedOption}
+                            style={{
+                                padding: '8px 20px',
+                                fontSize: '0.875rem',
+                                borderRadius: '6px',
+                                opacity: selectedOption ? 1 : 0.4,
+                                cursor: selectedOption ? 'pointer' : 'not-allowed',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '6px'
+                            }}
+                        >
+                            Submit Answer
+                        </button>
+                    </div>
+                ) : (
+                    <div style={{
+                        marginTop: '1rem',
+                        padding: '10px 14px',
+                        borderRadius: '8px',
+                        background: isCorrect ? 'rgba(63,185,80,0.1)' : 'rgba(248,81,73,0.1)',
+                        border: `1px solid ${isCorrect ? 'rgba(63,185,80,0.3)' : 'rgba(248,81,73,0.3)'}`,
+                        color: isCorrect ? '#3fb950' : '#f85149',
+                        fontSize: '0.9rem',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between'
+                    }}>
+                        <span>
+                            {isCorrect ? '✨ Correct! Great job.' : `❌ Incorrect. The correct answer is: ${correctDisplayAnswer}`}
+                        </span>
+                        <span style={{ fontSize: '0.75rem', opacity: 0.7, color: '#8b949e' }}>
+                            Answer recorded
+                        </span>
                     </div>
                 )}
             </div>
@@ -603,17 +756,152 @@ const Interview = () => {
     if (loading || !report) {
         return (
             <main style={{
-                display: 'flex', justifyContent: 'center', alignItems: 'center',
+                display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center',
                 height: '100vh', backgroundColor: '#0d1117', color: '#e6edf3',
-                fontFamily: "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"
+                fontFamily: "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+                gap: '1rem'
             }}>
-                <h2>Loading your interview plan...</h2>
+                <div style={{
+                    width: '36px', height: '36px', border: '3px solid rgba(255,255,255,0.15)',
+                    borderTopColor: '#e040fb', borderRadius: '50%', animation: 'spin 1s linear infinite'
+                }} />
+                <h2>{report ? 'Regenerate Resume...' : 'Loading your interview plan...'}</h2>
+                <style>{`@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }`}</style>
             </main>
         )
     }
 
     const scoreColor = report.matchScore >= 80 ? 'score--high' : report.matchScore >= 60 ? 'score--mid' : 'score--low'
     const scoreLabel = report.matchScore >= 80 ? 'Strong match for this role' : report.matchScore >= 60 ? 'Moderate match for this role' : 'Weak match for this role'
+
+    // Default 14-day syllabus fallback if report plan is empty
+    const default14DayPlan = [
+        { day: 1, focus: "Core Fundamentals & Architecture Internals", tasks: ["Review fundamental programming paradigms and memory models", "Practice core data structure implementations"] },
+        { day: 2, focus: "Advanced Concepts & Framework Deep Dive", tasks: ["Study lifecycle hooks, async operations, and concurrency", "Analyze framework internals and best practices"] },
+        { day: 3, focus: "Clean Architecture & Design Patterns", tasks: ["Review SOLID principles and clean code patterns", "Implement common design patterns in real scenarios"] },
+        { day: 4, focus: "State Management & Data Flow", tasks: ["Master global state management and caching strategies", "Optimize data structures for fast lookups"] },
+        { day: 5, focus: "APIs, Network Protocols & Auth Flow", tasks: ["Design RESTful and GraphQL endpoints", "Understand WebSockets, JWT auth flows, and headers"] },
+        { day: 6, focus: "Performance Optimization & Profiling", tasks: ["Profile slow queries, rendering bottlenecks and memory leaks", "Implement bundle splitting and caching mechanisms"] },
+        { day: 7, focus: "Automated Testing & Code Quality", tasks: ["Write unit, integration, and E2E test suites", "Review code coverage and edge case handling"] },
+        { day: 8, focus: "Security Best Practices & OWASP", tasks: ["Implement JWT, OAuth2, and RBAC authentication", "Mitigate OWASP Top 10 vulnerabilities"] },
+        { day: 9, focus: "Database Design, Indexing & Query Tuning", tasks: ["Optimize SQL/NoSQL schemas and indexing", "Practice complex aggregations and query performance"] },
+        { day: 10, focus: "DevOps, CI/CD & Containerization", tasks: ["Containerize applications with Docker", "Configure CI/CD pipelines and deployment strategies"] },
+        { day: 11, focus: "System Design & High-Scalability Engineering", tasks: ["Design distributed systems with load balancers and queues", "Analyze latency, throughput, and failover trade-offs"] },
+        { day: 12, focus: "Behavioral & Leadership Scenarios (STAR Method)", tasks: ["Prepare 5 STAR stories on conflict and leadership", "Practice behavioral responses with measurable impact"] },
+        { day: 13, focus: "Live Coding & Algorithm Mock Challenge", tasks: ["Solve medium/hard algorithmic problems under time pressure", "Walk through logic and complexity aloud"] },
+        { day: 14, focus: "Comprehensive Mock Interview & Final Polish", tasks: ["Conduct a complete timed end-to-end mock interview", "Review notes, refine answers, and prepare questions for interviewers"] }
+    ]
+
+    const defaultBehavioralQuestions = [
+        {
+            question: "Tell me about a time you faced a tight deadline with conflicting technical priorities. How did you deliver?",
+            intention: "Evaluate time management, prioritization, and proactive stakeholder communication.",
+            answer: "In a previous sprint, two mission-critical features were due simultaneously before an executive demo. I scheduled a quick 15-minute sync with the product manager, scoped out non-essential nice-to-haves, focused 100% on the core MVP path, and delivered 6 hours ahead of schedule with full test coverage."
+        },
+        {
+            question: "Describe a situation where you had a technical disagreement with a team member or tech lead. How was it resolved?",
+            intention: "Assess emotional intelligence, objective decision making, and collaboration.",
+            answer: "A teammate proposed building a bespoke state management library while I advocated for Zustand. Instead of arguing opinion, I set up a quick 1-hour prototype benchmark comparing bundle size, boilerplate, and maintainability. Seeing the data, we agreed on Zustand and avoided 2 weeks of custom overhead."
+        },
+        {
+            question: "Can you share an experience where a critical production bug occurred? What were your immediate actions?",
+            intention: "Test composure under pressure, root cause analysis, and post-mortem accountability.",
+            answer: "Following a release, users reported checkout errors due to an unhandled API payload. I immediately triggered a rollback to the stable version within 3 minutes to restore service, diagnosed the missing null check in logs, wrote unit tests reproducing the issue, and patched the fix with zero data loss."
+        },
+        {
+            question: "How do you handle receiving critical or negative feedback during code reviews?",
+            intention: "Evaluate growth mindset, lack of ego, and dedication to code quality.",
+            answer: "I view code reviews as an opportunity for continuous learning. When a senior engineer highlighted that my query had an N+1 problem, I thanked them for catching it, asked them to review my updated indexing approach, and documented the pattern in our team engineering handbook."
+        },
+        {
+            question: "Tell me about a time you had to learn a completely new technology or framework under tight time constraints.",
+            intention: "Assess adaptability, fast learning capability, and resourcefulness.",
+            answer: "When our project needed real-time dashboard updates, I had not used WebSockets with Redis Pub/Sub before. Over a weekend, I studied the protocol specifications, built a small sandbox proof-of-concept, and successfully implemented real-time notifications ahead of schedule."
+        },
+        {
+            question: "Describe a scenario where you mentored a junior developer or onboarded a new team member.",
+            intention: "Assess leadership, empathy, and knowledge sharing ability.",
+            answer: "A new hire was struggling with our monorepo architecture and Git workflow. I set up daily 20-minute pair-programming sessions for their first week, created an interactive onboarding README, and guided them through their first successful pull request."
+        },
+        {
+            question: "How do you balance writing clean, fully tested code with the business pressure to deliver quickly?",
+            intention: "Evaluate pragmatic engineering, technical debt management, and business awareness.",
+            answer: "I focus on high-risk pathways: core business logic and critical payment flows always get automated unit and integration tests. For UI cosmetic elements, I write modular components that can be iterated quickly, and log any intentional trade-offs in our backlog as technical debt tickets."
+        },
+        {
+            question: "Tell me about a project that failed or didn't go as planned. What did you learn from the experience?",
+            intention: "Test self-awareness, accountability, and resilience.",
+            answer: "We launched an automated data export feature that timed out on enterprise accounts with millions of records. I took ownership of the issue, migrated the synchronous endpoint to an asynchronous background job with email notifications, and instituted load testing as a standard pre-launch requirement."
+        }
+    ];
+
+    const defaultTechnicalQuiz = [
+        {
+            question: "Which data structure provides O(1) average time complexity for key lookup operations?",
+            options: ["Hash Table / HashMap", "Binary Search Tree", "Linked List", "Array"],
+            correctAnswer: "Hash Table / HashMap"
+        },
+        {
+            question: "In database query optimization, which execution plan confirms that an index was successfully used?",
+            options: ["Index Scan (IXSCAN)", "Collection Scan (COLLSCAN)", "Full Table Scan", "Projection Scan"],
+            correctAnswer: "Index Scan (IXSCAN)"
+        },
+        {
+            question: "Which HTTP header protects modern web applications against Cross-Site Scripting (XSS)?",
+            options: ["Content-Security-Policy", "Access-Control-Allow-Origin", "Cache-Control", "Strict-Transport-Security"],
+            correctAnswer: "Content-Security-Policy"
+        },
+        {
+            question: "Which protocol provides full-duplex, low-latency bidirectional communication over a single TCP connection?",
+            options: ["WebSockets", "HTTP/1.1", "Long Polling", "Server-Sent Events"],
+            correctAnswer: "WebSockets"
+        },
+        {
+            question: "In asynchronous JavaScript, which mechanism queues Promise callbacks?",
+            options: ["Microtask queue", "Macrotask queue", "Timer thread", "I/O pool"],
+            correctAnswer: "Microtask queue"
+        },
+        {
+            question: "Which Docker instruction creates an isolated build stage that discards development dependencies from the final production container?",
+            options: ["FROM node:18-alpine AS builder", "RUN npm install --production", "EXPOSE 8080", "VOLUME /data"],
+            correctAnswer: "FROM node:18-alpine AS builder"
+        },
+        {
+            question: "In Kubernetes, which controller guarantees that a copy of a pod runs on every single cluster node?",
+            options: ["DaemonSet", "Deployment", "StatefulSet", "ReplicaSet"],
+            correctAnswer: "DaemonSet"
+        },
+        {
+            question: "Which ACID property guarantees that all operations in a database transaction succeed or all fail together?",
+            options: ["Atomicity", "Consistency", "Isolation", "Durability"],
+            correctAnswer: "Atomicity"
+        }
+    ];
+
+    const behavioralQuestions = (Array.isArray(report.behavioralQuestions) && report.behavioralQuestions.length > 0)
+        ? report.behavioralQuestions
+        : defaultBehavioralQuestions;
+
+    const technicalQuiz = (Array.isArray(report.technicalQuiz) && report.technicalQuiz.length > 0)
+        ? report.technicalQuiz
+        : defaultTechnicalQuiz;
+
+    const preparationPlan = (Array.isArray(report.preparationPlan) && report.preparationPlan.length > 0)
+        ? report.preparationPlan
+        : default14DayPlan
+
+    const skillGaps = (Array.isArray(report.skillGaps) && report.skillGaps.length >= 5)
+        ? report.skillGaps
+        : (Array.isArray(report.resumeAnalysis?.weaknesses) && report.resumeAnalysis.weaknesses.length >= 5
+            ? report.resumeAnalysis.weaknesses.slice(0, 6).map((w, idx) => ({ skill: String(w).replace(/^Missing or weak:\s*/i, ''), severity: idx < 2 ? 'high' : 'medium' }))
+            : [
+                { skill: "System Design & Architecture", severity: "high" },
+                { skill: "Performance Optimization & Profiling", severity: "high" },
+                { skill: "Cloud Deployment & CI/CD", severity: "medium" },
+                { skill: "Security Best Practices & OWASP", severity: "medium" },
+                { skill: "Automated Testing & Code Quality", severity: "medium" },
+                { skill: "Database Query Tuning & Indexing", severity: "low" }
+            ])
 
     return (
         <div className='interview-page'>
@@ -662,7 +950,7 @@ const Interview = () => {
                             style={!canDownload ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
                         >
                             <svg height={"0.8rem"} style={{ marginRight: "0.8rem" }} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M10.6144 17.7956 11.492 15.7854C12.2731 13.9966 13.6789 12.5726 15.4325 11.7942L17.8482 10.7219C18.6162 10.381 18.6162 9.26368 17.8482 8.92277L15.5079 7.88394C13.7092 7.08552 12.2782 5.60881 11.5105 3.75894L10.6215 1.61673C10.2916.821765 9.19319.821767 8.8633 1.61673L7.97427 3.75892C7.20657 5.60881 5.77553 7.08552 3.97685 7.88394L1.63658 8.92277C.868537 9.26368.868536 10.381 1.63658 10.7219L4.0523 11.7942C5.80589 12.5726 7.21171 13.9966 7.99275 15.7854L8.8704 17.7956C9.20776 18.5682 10.277 18.5682 10.6144 17.7956ZM19.4014 22.6899 19.6482 22.1242C20.0882 21.1156 20.8807 20.3125 21.8695 19.8732L22.6299 19.5353C23.0412 19.3526 23.0412 18.7549 22.6299 18.5722L21.9121 18.2532C20.8978 17.8026 20.0911 16.9698 19.6586 15.9269L19.4052 15.3156C19.2285 14.8896 18.6395 14.8896 18.4628 15.3156L18.2094 15.9269C17.777 16.9698 16.9703 17.8026 15.956 18.2532L15.2381 18.5722C14.8269 18.7549 14.8269 19.3526 15.2381 19.5353L15.9985 19.8732C16.9874 20.3125 17.7798 21.1156 18.2198 22.1242L18.4667 22.6899C18.6473 23.104 19.2207 23.104 19.4014 22.6899Z"></path></svg>
-                            {loading ? 'Generating...' : canDownload ? 'Download Regenerated Resume' : '🔒 Regenerate Resume'}
+                            {loading ? 'Regenerating Resume...' : canDownload ? 'Regenerate Resume' : '🔒 Regenerate Resume'}
                         </button>
                         <button
                             onClick={() => setIsShareModalOpen(true)}
@@ -699,10 +987,10 @@ const Interview = () => {
                         <section>
                             <div className='content-header'>
                                 <h2>Technical Questions</h2>
-                                <span className='content-header__count'>{report.technicalQuestions.length} questions</span>
+                                <span className='content-header__count'>{(report.technicalQuestions || []).length} questions</span>
                             </div>
                             <div className='q-list'>
-                                {report.technicalQuestions.map((q, i) => (
+                                {(report.technicalQuestions || []).map((q, i) => (
                                     <QuestionCard 
                                         key={i} 
                                         item={q} 
@@ -720,20 +1008,21 @@ const Interview = () => {
                         <section>
                             <div className='content-header'>
                                 <h2>Technical Quiz</h2>
-                                <span className='content-header__count'>{(report.technicalQuiz || []).length} questions</span>
+                                <span className='content-header__count'>{technicalQuiz.length} questions</span>
                             </div>
                             <div className='q-list'>
-                                {(report.technicalQuiz || []).map((q, i) => (
-                                    <QuizCard 
-                                        key={i} 
-                                        item={q} 
-                                        index={i} 
-                                        onAnswerSubmitted={handleAnswerSubmitted}
-                                    />
-                                ))}
-                                {(!report.technicalQuiz || report.technicalQuiz.length === 0) && (
-                                    <p style={{ color: '#8b949e', textAlign: 'center', padding: '2rem' }}>No quiz questions available for this report.</p>
-                                )}
+                                {technicalQuiz.map((q, i) => {
+                                    const saved = submittedAnswers.find(a => a.question === q.question)
+                                    return (
+                                        <QuizCard 
+                                            key={i} 
+                                            item={q} 
+                                            index={i} 
+                                            savedAnswer={saved ? saved.answer : null}
+                                            onAnswerSubmitted={handleAnswerSubmitted}
+                                        />
+                                    )
+                                })}
                             </div>
                         </section>
                     )}
@@ -743,10 +1032,10 @@ const Interview = () => {
                         <section>
                             <div className='content-header'>
                                 <h2>Behavioral Questions</h2>
-                                <span className='content-header__count'>{report.behavioralQuestions.length} questions</span>
+                                <span className='content-header__count'>{behavioralQuestions.length} questions</span>
                             </div>
                             <div className='q-list'>
-                                {report.behavioralQuestions.map((q, i) => (
+                                {behavioralQuestions.map((q, i) => (
                                     <QuestionCard 
                                         key={i} 
                                         item={q} 
@@ -764,10 +1053,10 @@ const Interview = () => {
                         <section>
                             <div className='content-header'>
                                 <h2>Preparation Road Map</h2>
-                                <span className='content-header__count'>{report.preparationPlan.length}-day plan</span>
+                                <span className='content-header__count'>{preparationPlan.length}-day plan</span>
                             </div>
                             <div className='roadmap-list'>
-                                {report.preparationPlan.map((day) => (
+                                {preparationPlan.map((day) => (
                                     <RoadMapDay key={day.day} day={day} />
                                 ))}
                             </div>
@@ -791,7 +1080,7 @@ const Interview = () => {
                     <div className='skill-gaps'>
                         <p className='skill-gaps__label'>Skill Gaps</p>
                         <div className='skill-gaps__list'>
-                            {report.skillGaps.map((gap, i) => (
+                            {skillGaps.map((gap, i) => (
                                 <a 
                                     key={i} 
                                     href={`https://www.youtube.com/results?search_query=${encodeURIComponent(gap.skill + ' tutorial')}`}

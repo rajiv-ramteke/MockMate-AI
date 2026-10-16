@@ -33,13 +33,26 @@ const PersonalInfo = () => {
         }
     }, [profile]);
 
+    const [isSaving, setIsSaving] = useState(false);
+
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };
 
     const handleSave = async () => {
-        const res = await updateSection('personal', formData);
-        if (res.success) alert("Personal info updated successfully!");
+        setIsSaving(true);
+        try {
+            const res = await updateSection('personal', formData);
+            if (res && res.success) {
+                alert("Personal info updated successfully!");
+            } else {
+                alert(res?.error || "Failed to update personal info. Please check your inputs.");
+            }
+        } catch (err) {
+            alert(err.message || "An unexpected error occurred while saving.");
+        } finally {
+            setIsSaving(false);
+        }
     };
 
     const onFileChange = async (e) => {
@@ -171,7 +184,9 @@ const PersonalInfo = () => {
             </div>
 
             <div style={{ marginTop: '2rem', textAlign: 'right' }}>
-                <button className='button primary-button' onClick={handleSave}>Save Personal Info</button>
+                <button className='button primary-button' onClick={handleSave} disabled={isSaving}>
+                    {isSaving ? 'Saving Personal Info...' : 'Save Personal Info'}
+                </button>
             </div>
         </div>
     );

@@ -2,18 +2,167 @@ const nodemailer = require('nodemailer');
 
 const getTransporter = () => {
     if (!process.env.SMTP_HOST) {
-        throw new Error("SMTP credentials not configured.");
+        console.warn("⚠️ [SMTP WARN] SMTP_HOST environment variable is not configured. Email will not be sent.");
+        return null;
     }
+    const port = Number(process.env.SMTP_PORT) || 465;
+    const isSecure = port === 465; // Port 465 uses SSL, Port 587 uses STARTTLS
+    const cleanPass = process.env.SMTP_PASS ? process.env.SMTP_PASS.replace(/\s+/g, '') : '';
+
     return nodemailer.createTransport({
         host: process.env.SMTP_HOST,
-        port: Number(process.env.SMTP_PORT) || 465,
-        secure: true,
+        port: port,
+        secure: isSecure,
+        connectionTimeout: 15000,
+        greetingTimeout: 15000,
+        socketTimeout: 20000,
         auth: {
             user: process.env.SMTP_USER,
-            pass: process.env.SMTP_PASS
+            pass: cleanPass
+        },
+        tls: {
+            rejectUnauthorized: false
         }
     });
 };
+
+/**
+ * Diagnostic test helper for testing SMTP settings
+ */
+async function testEmailConnection(toEmail) {
+    if (!process.env.SMTP_HOST) {
+        return {
+            success: false,
+            message: "SMTP_HOST environment variable is missing on server.",
+            envStatus: {
+                SMTP_HOST: !!process.env.SMTP_HOST,
+                SMTP_PORT: process.env.SMTP_PORT || 465,
+                SMTP_USER: !!process.env.SMTP_USER,
+                SMTP_PASS: !!process.env.SMTP_PASS
+            }
+        };
+    }
+
+    const transporter = getTransporter();
+    try {
+        await transporter.verify();
+    } catch (verifyErr) {
+        return {
+            success: false,
+            message: `SMTP Connection / Handshake failed: ${verifyErr.message}`,
+            error: verifyErr.message,
+            code: verifyErr.code,
+            command: verifyErr.command,
+            envStatus: {
+                SMTP_HOST: process.env.SMTP_HOST,
+                SMTP_PORT: process.env.SMTP_PORT || 465,
+                SMTP_USER: process.env.SMTP_USER,
+                SMTP_PASS: process.env.SMTP_PASS ? "**** (Set)" : "MISSING"
+            }
+        };
+    }
+
+    if (toEmail) {
+        try {
+            const sender = process.env.SMTP_USER || 'noreply@mockmate.ai';
+            const info = await transporter.sendMail({
+                from: `"MockMate AI Test" <${sender}>`,
+                to: toEmail,
+                subject: 'MockMate AI Test Email',
+                text: 'If you receive this email, your SMTP configuration on cloud deployment is working perfectly!'
+            });
+            return {
+                success: true,
+                message: `Test email sent successfully to ${toEmail}`,
+                messageId: info.messageId
+            };
+        } catch (sendErr) {
+            return {
+                success: false,
+                message: `Send mail failed: ${sendErr.message}`,
+                error: sendErr.message
+            };
+        }
+    }
+
+    return {
+        success: true,
+        message: "SMTP Transporter verified successfully!"
+    };
+}
+
+/**
+ * Sends OTP Email for registration or resend
+ */
+async function sendOtpEmail(toEmail, otp, subject = 'Account Verification OTP', title = 'Verification OTP') {
+    const transporter = getTransporter();
+    if (!transporter) {
+        console.warn(`⚠️ Cannot send OTP to ${toEmail}: SMTP_HOST is not set in environment variables.`);
+        return false;
+    }
+
+    const sender = process.env.SMTP_USER || 'noreply@mockmate.ai';
+    const html = `<div style="font-family:sans-serif;max-width:480px;margin:auto;padding:32px;background:#0f0f1a;color:#e0e0e0;border-radius:12px">
+  <h2 style="color:#a78bfa">🧠 MockMate AI</h2>
+  <p>Welcome! Here is your ${title.toLowerCase()}:</p>
+  <div style="background:#1e1e2e;border-radius:8px;padding:24px;text-align:center;margin:24px 0">
+    <p style="margin:0;font-size:14px;color:#a0a0b0">Your verification OTP is:</p>
+    <h1 style="letter-spacing:12px;color:#a78bfa;margin:12px 0">${otp}</h1>
+    <p style="margin:0;font-size:12px;color:#666">Expires in 10 minutes</p>
+  </div>
+  <p style="font-size:12px;color:#555">If you didn't request this code, please ignore this email.</p>
+</div>`;
+
+    try {
+        const info = await transporter.sendMail({
+            from: `"MockMate AI" <${sender}>`,
+            to: toEmail,
+            subject: subject,
+            html: html
+        });
+        console.log(`✅ OTP Email sent successfully to ${toEmail}, MessageID: ${info.messageId}`);
+        return true;
+    } catch (err) {
+        console.error(`❌ Failed to send OTP email to ${toEmail}:`, err.message);
+        return false;
+    }
+}
+
+/**
+ * Sends Password Reset Email
+ */
+async function sendResetPasswordEmail(toEmail, resetUrl) {
+    const transporter = getTransporter();
+    if (!transporter) {
+        console.warn(`⚠️ Cannot send Password Reset to ${toEmail}: SMTP_HOST is not set in environment variables.`);
+        return false;
+    }
+
+    const sender = process.env.SMTP_USER || 'noreply@mockmate.ai';
+    const html = `<div style="font-family:sans-serif;max-width:480px;margin:auto;padding:32px;background:#0f0f1a;color:#e0e0e0;border-radius:12px">
+  <h2 style="color:#a78bfa">🧠 MockMate AI</h2>
+  <p>We received a request to reset your password.</p>
+  <div style="text-align:center;margin:24px 0">
+    <a href="${resetUrl}" style="background:linear-gradient(135deg,#a78bfa,#6d28d9);color:#fff;padding:14px 28px;border-radius:8px;text-decoration:none;font-weight:600;font-size:16px">Reset Password</a>
+  </div>
+  <p style="font-size:13px;color:#888">Or copy this link: <a href="${resetUrl}" style="color:#a78bfa">${resetUrl}</a></p>
+  <p style="font-size:12px;color:#555;margin-top:24px">This link expires in 10 minutes. If you didn't request this, ignore this email.</p>
+</div>`;
+
+    try {
+        const info = await transporter.sendMail({
+            from: `"MockMate AI" <${sender}>`,
+            to: toEmail,
+            subject: 'Password Reset Request',
+            html: html
+        });
+        console.log(`✅ Reset Password Email sent to ${toEmail}, MessageID: ${info.messageId}`);
+        return true;
+    } catch (err) {
+        console.error(`❌ Failed to send reset email to ${toEmail}:`, err.message);
+        return false;
+    }
+}
 
 function h2(title) {
     return '<h2 style="color:#0366d6;border-left:4px solid #0366d6;padding-left:12px;margin-top:35px;margin-bottom:12px;">' + title + '</h2>';
@@ -351,5 +500,8 @@ async function sendProfileToProfessor(professorEmail, studentData, pdfBuffer) {
 }
 
 module.exports = {
-    sendProfileToProfessor
+    sendProfileToProfessor,
+    sendOtpEmail,
+    sendResetPasswordEmail,
+    testEmailConnection
 };

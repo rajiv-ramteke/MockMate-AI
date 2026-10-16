@@ -70,4 +70,11 @@ authRouter.post("/verify-otp", authController.verifyOtpController)
  */
 authRouter.post("/resend-otp", authController.resendOtpController)
 
+/**
+ * @route GET /api/auth/test-email
+ * @description Diagnostic route to test SMTP connection on server
+ * @access Public
+ */
+authRouter.get("/test-email", authController.testEmailController)
+
 module.exports = authRouter

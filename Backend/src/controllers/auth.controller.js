@@ -5,7 +5,7 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const tokenBlacklistModel = require("../models/blacklist.model");
 const crypto = require('crypto');
-const nodemailer = require('nodemailer');
+const { sendOtpEmail, sendResetPasswordEmail, testEmailConnection } = require('../services/email.service');
 
 // Initialize Firebase Admin
 if (getApps().length === 0) {
@@ -29,25 +29,28 @@ async function registerUserController(req, res) {
             })
         }
 
-        const existingUsers = await userModel.find({
-            $or: [ { username }, { email } ]
-        })
+        // Clean up any existing unverified accounts with this username or email so user can re-register
+        await userModel.deleteMany({
+            $or: [{ username }, { email }],
+            isVerified: false
+        });
 
-        for (const existingUser of existingUsers) {
-            if (!existingUser.isVerified) {
-                // Clean up unverified accounts so the user can re-register
-                await userModel.findByIdAndDelete(existingUser._id)
-            } else {
-                if (existingUser.email === email) {
-                    return res.status(400).json({
-                        message: "Account already exists with this email address"
-                    })
-                }
-                if (existingUser.username === username) {
-                    return res.status(400).json({
-                        message: "Account already exists with this username"
-                    })
-                }
+        // Check if a verified user already exists
+        const existingVerified = await userModel.findOne({
+            $or: [{ username }, { email }],
+            isVerified: true
+        });
+
+        if (existingVerified) {
+            if (existingVerified.email === email) {
+                return res.status(400).json({
+                    message: "Account already exists with this email address"
+                });
+            }
+            if (existingVerified.username === username) {
+                return res.status(400).json({
+                    message: "Account already exists with this username"
+                });
             }
         }
 
@@ -68,39 +71,9 @@ async function registerUserController(req, res) {
 
         console.log("Verification OTP:", otp); // For local testing
 
-        if (process.env.SMTP_HOST) {
-            try {
-                const transporter = nodemailer.createTransport({
-                    host: process.env.SMTP_HOST,
-                    port: Number(process.env.SMTP_PORT) || 465,
-                    secure: true,
-                    connectionTimeout: 5000,
-                    greetingTimeout: 5000,
-                    socketTimeout: 5000,
-                    auth: {
-                        user: process.env.SMTP_USER,
-                        pass: process.env.SMTP_PASS
-                    }
-                });
-
-                await transporter.sendMail({
-                    from: `"MockMate AI" <${process.env.SMTP_USER}>`,
-                    to: user.email,
-                    subject: 'Account Verification OTP',
-                    html: `<div style="font-family:sans-serif;max-width:480px;margin:auto;padding:32px;background:#0f0f1a;color:#e0e0e0;border-radius:12px">
-  <h2 style="color:#a78bfa">🧠 MockMate AI</h2>
-  <p>Welcome! Please verify your email to activate your account.</p>
-  <div style="background:#1e1e2e;border-radius:8px;padding:24px;text-align:center;margin:24px 0">
-    <p style="margin:0;font-size:14px;color:#a0a0b0">Your verification OTP is:</p>
-    <h1 style="letter-spacing:12px;color:#a78bfa;margin:12px 0">${otp}</h1>
-    <p style="margin:0;font-size:12px;color:#666">Expires in 10 minutes</p>
-  </div>
-  <p style="font-size:12px;color:#555">If you didn't register, please ignore this email.</p>
-</div>`
-                });
-            } catch (emailErr) {
-                console.error("⚠️ Failed to send verification email:", emailErr.message);
-            }
+        const emailSent = await sendOtpEmail(user.email, otp, 'Account Verification OTP', 'Verification OTP');
+        if (!emailSent && !process.env.SMTP_HOST) {
+            console.warn("⚠️ SMTP_HOST not set in env variables. OTP printed in server console.");
         }
 
         res.status(201).json({
@@ -113,7 +86,13 @@ async function registerUserController(req, res) {
         })
     } catch (err) {
         console.error("registerUserController error:", err)
-        res.status(500).json({ message: "Registration failed. Please try again." })
+        if (err.code === 11000) {
+            const field = Object.keys(err.keyValue || err.keyPattern || {})[0] || 'email/username';
+            return res.status(400).json({
+                message: `An account with this ${field} already exists. Please login or use a different ${field}.`
+            });
+        }
+        res.status(500).json({ message: err.message || "Registration failed. Please try again." })
     }
 }
 
@@ -308,39 +287,7 @@ async function forgotPasswordController(req, res) {
         
         console.log("Password Reset URL:", resetUrl); // For testing locally without SMTP
 
-        if (process.env.SMTP_HOST) {
-            try {
-                const transporter = nodemailer.createTransport({
-                    host: process.env.SMTP_HOST,
-                    port: Number(process.env.SMTP_PORT) || 465,
-                    secure: true,
-                    connectionTimeout: 5000,
-                    greetingTimeout: 5000,
-                    socketTimeout: 5000,
-                    auth: {
-                        user: process.env.SMTP_USER,
-                        pass: process.env.SMTP_PASS
-                    }
-                });
-
-                await transporter.sendMail({
-                    from: `"MockMate AI" <${process.env.SMTP_USER}>`,
-                    to: user.email,
-                    subject: 'Password Reset Request',
-                    html: `<div style="font-family:sans-serif;max-width:480px;margin:auto;padding:32px;background:#0f0f1a;color:#e0e0e0;border-radius:12px">
-  <h2 style="color:#a78bfa">🧠 MockMate AI</h2>
-  <p>We received a request to reset your password.</p>
-  <div style="text-align:center;margin:24px 0">
-    <a href="${resetUrl}" style="background:linear-gradient(135deg,#a78bfa,#6d28d9);color:#fff;padding:14px 28px;border-radius:8px;text-decoration:none;font-weight:600;font-size:16px">Reset Password</a>
-  </div>
-  <p style="font-size:13px;color:#888">Or copy this link: <a href="${resetUrl}" style="color:#a78bfa">${resetUrl}</a></p>
-  <p style="font-size:12px;color:#555;margin-top:24px">This link expires in 10 minutes. If you didn't request this, ignore this email.</p>
-</div>`
-                });
-            } catch (emailErr) {
-                console.error("⚠️ Failed to send reset email:", emailErr.message);
-            }
-        }
+        await sendResetPasswordEmail(user.email, resetUrl);
 
         res.status(200).json({ message: "Password reset link sent (check console if local)" });
     } catch (err) {
@@ -453,39 +400,9 @@ async function resendOtpController(req, res) {
 
         console.log("Resend Verification OTP:", otp);
 
-        if (process.env.SMTP_HOST) {
-            try {
-                const transporter = nodemailer.createTransport({
-                    host: process.env.SMTP_HOST,
-                    port: Number(process.env.SMTP_PORT) || 465,
-                    secure: true,
-                    connectionTimeout: 5000,
-                    greetingTimeout: 5000,
-                    socketTimeout: 5000,
-                    auth: {
-                        user: process.env.SMTP_USER,
-                        pass: process.env.SMTP_PASS
-                    }
-                });
-
-                await transporter.sendMail({
-                    from: `"MockMate AI" <${process.env.SMTP_USER}>`,
-                    to: user.email,
-                    subject: 'New Account Verification OTP',
-                    html: `<div style="font-family:sans-serif;max-width:480px;margin:auto;padding:32px;background:#0f0f1a;color:#e0e0e0;border-radius:12px">
-  <h2 style="color:#a78bfa">🧠 MockMate AI</h2>
-  <p>Here is your new verification OTP.</p>
-  <div style="background:#1e1e2e;border-radius:8px;padding:24px;text-align:center;margin:24px 0">
-    <p style="margin:0;font-size:14px;color:#a0a0b0">Your verification OTP is:</p>
-    <h1 style="letter-spacing:12px;color:#a78bfa;margin:12px 0">${otp}</h1>
-    <p style="margin:0;font-size:12px;color:#666">Expires in 10 minutes</p>
-  </div>
-  <p style="font-size:12px;color:#555">If you didn't request this, please ignore this email.</p>
-</div>`
-                });
-            } catch (emailErr) {
-                console.error("⚠️ Failed to send resend OTP email:", emailErr.message);
-            }
+        const emailSent = await sendOtpEmail(user.email, otp, 'New Account Verification OTP', 'Verification OTP');
+        if (!emailSent && !process.env.SMTP_HOST) {
+            console.warn("⚠️ SMTP_HOST not set in env variables. OTP printed in server console.");
         }
 
         res.status(200).json({ message: "OTP sent successfully" });
@@ -496,6 +413,20 @@ async function resendOtpController(req, res) {
 }
 
 
+async function testEmailController(req, res) {
+    try {
+        const { to } = req.query;
+        const result = await testEmailConnection(to);
+        return res.status(result.success ? 200 : 500).json(result);
+    } catch (err) {
+        return res.status(500).json({
+            success: false,
+            message: "Test email execution error",
+            error: err.message
+        });
+    }
+}
+
 module.exports = {
     registerUserController,
     loginUserController,
@@ -505,5 +436,6 @@ module.exports = {
     forgotPasswordController,
     resetPasswordController,
     verifyOtpController,
-    resendOtpController
+    resendOtpController,
+    testEmailController
 }

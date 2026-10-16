@@ -8,7 +8,7 @@ const technicalQuestionSchema = new mongoose.Schema({
     },
     intention: {
         type: String,
-        required: [ true, "Intention is required" ]
+        default: "Assess candidate's technical proficiency and system design competence."
     },
     answer: {
         type: String,
@@ -21,11 +21,11 @@ const technicalQuestionSchema = new mongoose.Schema({
 const behavioralQuestionSchema = new mongoose.Schema({
     question: {
         type: String,
-        required: [ true, "Technical question is required" ]
+        required: [ true, "Behavioral question is required" ]
     },
     intention: {
         type: String,
-        required: [ true, "Intention is required" ]
+        default: "Assess candidate's behavioral adaptability, teamwork, and situational judgment."
     },
     answer: {
         type: String,
@@ -43,7 +43,11 @@ const skillGapSchema = new mongoose.Schema({
     severity: {
         type: String,
         enum: [ "low", "medium", "high" ],
-        required: [ true, "Severity is required" ]
+        default: "medium",
+        set: (v) => {
+            const s = (v || '').toLowerCase();
+            return ['low', 'medium', 'high'].includes(s) ? s : (s === 'critical' ? 'high' : 'medium');
+        }
     }
 }, {
     _id: false

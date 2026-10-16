@@ -136,24 +136,55 @@ async function updateProfileSection(req, res) {
         const validArrays = ['education', 'experience', 'projects', 'skills', 'achievements'];
         
         if (section === 'personal') {
-            // Only allow specific fields to prevent overwriting arrays
             const allowed = ['fullName', 'phone', 'dob', 'gender', 'address', 'linkedin', 'github', 'portfolio', 'summary'];
             allowed.forEach(field => {
-                if (data[field] !== undefined) profile[field] = data[field];
+                if (data[field] !== undefined) {
+                    if (field === 'dob') {
+                        if (data.dob && String(data.dob).trim() !== '') {
+                            const parsedDate = new Date(data.dob);
+                            profile.dob = isNaN(parsedDate.getTime()) ? undefined : parsedDate;
+                        } else {
+                            profile.dob = undefined;
+                        }
+                    } else {
+                        profile[field] = String(data[field] || '').trim();
+                    }
+                }
             });
         } else if (validArrays.includes(section)) {
             if (!Array.isArray(data)) {
                 return res.status(400).json({ message: `Data for ${section} must be an array` });
             }
             
-            // Clean empty strings to prevent Mongoose CastError on Numbers and Dates
+            // Clean empty strings & parse types safely to prevent Mongoose CastErrors
             const cleanData = data.map(item => {
                 const cleanItem = { ...item };
                 for (let key in cleanItem) {
-                    if (cleanItem[key] === "") {
+                    if (cleanItem[key] === "" || cleanItem[key] === null || cleanItem[key] === undefined) {
                         delete cleanItem[key];
                     }
                 }
+                // Handle specific date conversions
+                if (cleanItem.startDate) {
+                    const d = new Date(cleanItem.startDate);
+                    if (isNaN(d.getTime())) delete cleanItem.startDate;
+                    else cleanItem.startDate = d;
+                }
+                if (cleanItem.endDate) {
+                    const d = new Date(cleanItem.endDate);
+                    if (isNaN(d.getTime())) delete cleanItem.endDate;
+                    else cleanItem.endDate = d;
+                }
+                if (cleanItem.date) {
+                    const d = new Date(cleanItem.date);
+                    if (isNaN(d.getTime())) delete cleanItem.date;
+                    else cleanItem.date = d;
+                }
+                // Handle numeric conversions
+                if (cleanItem.startYear) cleanItem.startYear = Number(cleanItem.startYear) || undefined;
+                if (cleanItem.endYear) cleanItem.endYear = Number(cleanItem.endYear) || undefined;
+                if (cleanItem.score) cleanItem.score = Number(cleanItem.score) || undefined;
+
                 return cleanItem;
             });
 
@@ -167,8 +198,8 @@ async function updateProfileSection(req, res) {
         
         res.status(200).json({ message: `${section} updated successfully`, profile });
     } catch (err) {
-        console.error(err);
-        res.status(500).json({ message: `Failed to update ${req.params.section}` });
+        console.error("Profile update error:", err);
+        res.status(500).json({ message: `Failed to update ${req.params.section}: ${err.message}` });
     }
 }
 

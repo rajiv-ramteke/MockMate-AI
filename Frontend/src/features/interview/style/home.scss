@@ -324,7 +324,6 @@ $font-stack:     system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Robot
     }
 
     &__remove {
-        margin-top: 0.5rem;
         padding: 0.25rem 0.75rem;
         font-size: 0.75rem;
         color: #ff6b6b;
@@ -338,6 +337,143 @@ $font-stack:     system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Robot
             background: rgba(#ff6b6b, 0.2);
         }
     }
+
+    &__actions {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-top: 0.5rem;
+    }
+
+    &__view {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        padding: 0.25rem 0.75rem;
+        font-size: 0.75rem;
+        color: $accent;
+        background: rgba($accent, 0.1);
+        border: 1px solid rgba($accent, 0.3);
+        border-radius: 0.3rem;
+        cursor: pointer;
+        font-family: $font-stack;
+        transition: background 0.2s, border-color 0.2s;
+
+        &:hover {
+            background: rgba($accent, 0.2);
+            border-color: rgba($accent, 0.5);
+        }
+
+        svg {
+            flex-shrink: 0;
+        }
+    }
+}
+
+// ── Resume Preview Modal ─────────────────────────────────────────────────────
+.resume-modal-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.75);
+    backdrop-filter: blur(6px);
+    animation: modalFadeIn 0.25s ease-out;
+}
+
+.resume-modal {
+    width: 90vw;
+    max-width: 900px;
+    height: 85vh;
+    display: flex;
+    flex-direction: column;
+    background: $bg-card;
+    border: 1px solid $border-color;
+    border-radius: 1rem;
+    overflow: hidden;
+    box-shadow: 0 24px 80px rgba(0, 0, 0, 0.6), 0 0 60px rgba($accent, 0.08);
+    animation: modalSlideUp 0.3s ease-out;
+
+    &__header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0.85rem 1.25rem;
+        background: $bg-panel;
+        border-bottom: 1px solid $border-color;
+    }
+
+    &__title-group {
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+        min-width: 0;
+
+        h3 {
+            margin: 0;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: $text-primary;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 400px;
+        }
+    }
+
+    &__size {
+        font-size: 0.7rem;
+        color: $text-muted;
+        background: rgba($text-muted, 0.12);
+        padding: 0.15rem 0.45rem;
+        border-radius: 0.25rem;
+        white-space: nowrap;
+    }
+
+    &__close {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 32px;
+        height: 32px;
+        background: rgba(#ff6b6b, 0.1);
+        border: 1px solid rgba(#ff6b6b, 0.2);
+        border-radius: 0.4rem;
+        color: #ff6b6b;
+        cursor: pointer;
+        transition: background 0.2s, transform 0.15s;
+        flex-shrink: 0;
+
+        &:hover {
+            background: rgba(#ff6b6b, 0.2);
+            transform: scale(1.05);
+        }
+    }
+
+    &__body {
+        flex: 1;
+        display: flex;
+        min-height: 0;
+        background: #1a1a2e;
+    }
+
+    &__iframe {
+        width: 100%;
+        height: 100%;
+        border: none;
+    }
+}
+
+@keyframes modalFadeIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+}
+
+@keyframes modalSlideUp {
+    from { opacity: 0; transform: translateY(30px) scale(0.97); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
 }
 
 // ── OR Divider ────────────────────────────────────────────────────────────────
@@ -473,15 +609,37 @@ $font-stack:     system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Robot
     }
 }
 
-// ── Loading Screen ────────────────────────────────────────────────────────────
-@keyframes pulse-brain {
-    0%, 100% { transform: scale(1); }
-    50%       { transform: scale(1.15); }
+// ── Loading Screen ─────────────────────────────────────────────────────────────
+
+// Keyframes
+@keyframes ls-orb-float {
+    0%, 100% { transform: translateY(0) scale(1); opacity: 0.6; }
+    50%       { transform: translateY(-30px) scale(1.08); opacity: 0.9; }
 }
 
-@keyframes shimmer {
-    0%   { transform: translateX(-100%); }
-    100% { transform: translateX(100%); }
+@keyframes ls-ring-spin {
+    to { transform: rotate(360deg); }
+}
+
+@keyframes ls-wave-bar {
+    0%, 100% { transform: scaleY(0.3); opacity: 0.4; }
+    50%       { transform: scaleY(1);   opacity: 1; }
+}
+
+@keyframes ls-step-in {
+    from { opacity: 0; transform: translateX(-6px); }
+    to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes ls-dot-pulse {
+    0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba($accent, 0.6); }
+    50%       { transform: scale(1.3); box-shadow: 0 0 0 6px rgba($accent, 0); }
+}
+
+@keyframes ls-gradient-shift {
+    0%   { background-position: 0% 50%; }
+    50%  { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
 }
 
 @keyframes dots {
@@ -492,38 +650,69 @@ $font-stack:     system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Robot
     100% { content: '';    }
 }
 
+// Ambient orbs
+.ls-orb {
+    position: fixed;
+    border-radius: 50%;
+    filter: blur(80px);
+    pointer-events: none;
+    z-index: 0;
+
+    &--1 {
+        width: 420px; height: 420px;
+        background: radial-gradient(circle, rgba($accent, 0.25), transparent 70%);
+        top: -120px; left: -120px;
+        animation: ls-orb-float 7s ease-in-out infinite;
+    }
+    &--2 {
+        width: 320px; height: 320px;
+        background: radial-gradient(circle, rgba(168, 85, 247, 0.2), transparent 70%);
+        bottom: -80px; right: -80px;
+        animation: ls-orb-float 9s ease-in-out infinite reverse;
+    }
+    &--3 {
+        width: 200px; height: 200px;
+        background: radial-gradient(circle, rgba(56, 189, 248, 0.18), transparent 70%);
+        top: 50%; left: 50%;
+        transform: translate(-50%, -50%);
+        animation: ls-orb-float 5s ease-in-out infinite 1s;
+    }
+}
+
+// Main loading screen wrapper
 .loading-screen {
+    position: relative;
     min-height: 100vh;
     background: $bg-page;
     display: flex;
     align-items: center;
     justify-content: center;
     font-family: $font-stack;
+    overflow: hidden;
 
     &__card {
+        position: relative;
+        z-index: 1;
         display: flex;
         flex-direction: column;
         align-items: center;
-        gap: 1rem;
-        background: $bg-card;
-        border: 1px solid $border-color;
-        border-radius: 20px;
-        padding: 3rem 3.5rem;
-        max-width: 420px;
-        width: 90%;
+        gap: 1.1rem;
+        background: rgba($bg-card, 0.85);
+        border: 1px solid rgba($accent, 0.2);
+        border-radius: 24px;
+        padding: 2.5rem 3rem;
+        max-width: 480px;
+        width: 92%;
         text-align: center;
-        box-shadow: 0 8px 40px rgba(0,0,0,0.4);
-    }
-
-    &__brain {
-        font-size: 3.5rem;
-        animation: pulse-brain 1.5s ease-in-out infinite;
-        line-height: 1;
+        box-shadow: 0 0 0 1px rgba($accent, 0.06),
+                    0 20px 60px rgba(0,0,0,0.5),
+                    0 0 80px rgba($accent, 0.08);
+        backdrop-filter: blur(16px);
     }
 
     &__title {
         margin: 0;
-        font-size: 1.5rem;
+        font-size: 1.35rem;
         font-weight: 700;
         color: $text-primary;
         letter-spacing: 0.02em;
@@ -531,41 +720,163 @@ $font-stack:     system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Robot
 
     &__sub {
         margin: 0;
-        font-size: 0.95rem;
+        font-size: 0.88rem;
         color: $text-muted;
-    }
-
-    &__bar {
-        width: 100%;
-        height: 6px;
-        background: $bg-panel;
-        border-radius: 99px;
-        overflow: hidden;
-        position: relative;
-    }
-
-    &__fill {
-        height: 100%;
-        width: 100%;
-        background: linear-gradient(90deg, $accent, #a855f7, $accent-alt);
-        background-size: 200% 100%;
-        border-radius: 99px;
-        position: relative;
-        overflow: hidden;
-
-        &::after {
-            content: '';
-            position: absolute;
-            inset: 0;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.35), transparent);
-            animation: shimmer 1.4s infinite;
-        }
+        min-height: 1.4em;
+        transition: opacity 0.3s;
     }
 
     &__hint {
         margin: 0;
-        font-size: 0.8rem;
-        color: darken($text-muted, 10%);
+        font-size: 0.78rem;
+        color: rgba($text-muted, 0.7);
+        line-height: 1.5;
+    }
+}
+
+// ── Circular Ring ──────────────────────────────────────────────────────────────
+.ls-ring-wrap {
+    position: relative;
+    width: 130px;
+    height: 130px;
+    flex-shrink: 0;
+}
+
+.ls-ring {
+    width: 130px;
+    height: 130px;
+    transform: rotate(-90deg);
+
+    &__track {
+        fill: none;
+        stroke: rgba($accent, 0.1);
+        stroke-width: 8;
+    }
+
+    &__fill {
+        fill: none;
+        stroke: url(#ringGrad);
+        stroke-width: 8;
+        stroke-linecap: round;
+        filter: drop-shadow(0 0 6px rgba($accent, 0.7));
+        transition: stroke-dashoffset 0.45s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+}
+
+// Gradient definition — injected via defs in SVG via CSS trick using linearGradient on the SVG
+// We'll define it inline via a SVG defs element and reference it with url(#ringGrad)
+// (In Home.jsx we add <defs> inside the SVG)
+
+.ls-ring__center {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+}
+
+.ls-ring__pct {
+    font-size: 1.6rem;
+    font-weight: 800;
+    background: linear-gradient(135deg, $accent, #a855f7);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    line-height: 1;
+}
+
+.ls-ring__label {
+    font-size: 0.68rem;
+    font-weight: 600;
+    color: $text-muted;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+
+// ── Wave Bars ─────────────────────────────────────────────────────────────────
+.ls-wave {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    height: 32px;
+
+    &__bar {
+        width: 5px;
+        height: 100%;
+        border-radius: 99px;
+        background: linear-gradient(to top, $accent, #a855f7);
+        transform-origin: center bottom;
+        animation: ls-wave-bar 1s ease-in-out infinite;
+    }
+}
+
+// ── Steps List ────────────────────────────────────────────────────────────────
+.ls-steps {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+    max-height: 180px;
+    overflow: hidden;
+
+    &__item {
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+        padding: 0.35rem 0.75rem;
+        border-radius: 8px;
+        opacity: 0.3;
+        transition: opacity 0.35s, background 0.3s;
+
+        &--done {
+            opacity: 0.55;
+
+            .ls-steps__dot {
+                background: #22c55e;
+                box-shadow: none;
+            }
+            .ls-steps__text {
+                text-decoration: line-through;
+                color: #22c55e;
+            }
+        }
+
+        &--active {
+            opacity: 1;
+            background: rgba($accent, 0.07);
+            animation: ls-step-in 0.3s ease;
+
+            .ls-steps__dot {
+                background: $accent;
+                animation: ls-dot-pulse 1.2s ease-in-out infinite;
+            }
+            .ls-steps__text {
+                color: $text-primary;
+                font-weight: 600;
+            }
+        }
+    }
+
+    &__dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: $border-color;
+        flex-shrink: 0;
+        transition: background 0.3s;
+    }
+
+    &__text {
+        font-size: 0.78rem;
+        color: $text-muted;
+        text-align: left;
+        line-height: 1.4;
+        transition: color 0.3s;
     }
 }
 

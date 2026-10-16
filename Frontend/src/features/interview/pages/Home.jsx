@@ -14,14 +14,18 @@ const Home = () => {
     const [error, setError] = useState("")
     const [isGenerating, setIsGenerating] = useState(false)
     const [progress, setProgress] = useState(0)
+    const [showResumePreview, setShowResumePreview] = useState(false)
     const resumeInputRef = useRef()
 
     const loadingSteps = [
-        "Analyzing resume & job description",
-        "Identifying skill gaps & candidate strengths",
-        "Generating 11 custom interview questions",
-        "Building personalized preparation roadmap",
-        "Finalizing report & AI strategy"
+        "Parsing candidate resume & target job requirements",
+        "Running deep AI analysis on projects, experience & tech stack",
+        "Identifying critical skill gaps & candidate strengths",
+        "Generating 10 in-depth technical questions with model answers",
+        "Formulating 8 STAR-method behavioral interview answers",
+        "Synthesizing 8 technical quiz MCQs & evaluation matrix",
+        "Constructing personalized 14-day mastery road map",
+        "Finalizing comprehensive AI interview report"
     ]
 
     useEffect(() => {
@@ -30,10 +34,15 @@ const Home = () => {
             setProgress(5);
             timer = setInterval(() => {
                 setProgress((prev) => {
-                    if (prev >= 92) return 92; // hold at 92% until complete
-                    return prev + 1;
+                    if (prev < 25) return +(prev + 2.4).toFixed(1);
+                    if (prev < 50) return +(prev + 1.8).toFixed(1);
+                    if (prev < 75) return +(prev + 1.2).toFixed(1);
+                    if (prev < 88) return +(prev + 0.7).toFixed(1);
+                    if (prev < 95) return +(prev + 0.35).toFixed(1);
+                    if (prev < 98.8) return +(prev + 0.15).toFixed(1);
+                    return +(Math.min(99, prev + 0.05)).toFixed(1);
                 });
-            }, 220);
+            }, 500);
         } else {
             setProgress(0);
         }
@@ -41,7 +50,7 @@ const Home = () => {
     }, [isGenerating]);
 
     const currentStepIndex = Math.min(
-        Math.floor((progress / 95) * loadingSteps.length),
+        Math.floor((progress / 99) * loadingSteps.length),
         loadingSteps.length - 1
     );
 
@@ -97,22 +106,51 @@ const Home = () => {
     if (isGenerating) {
         return (
             <main className='loading-screen'>
+                {/* Ambient background orbs */}
+                <div className='ls-orb ls-orb--1' />
+                <div className='ls-orb ls-orb--2' />
+                <div className='ls-orb ls-orb--3' />
+
                 <div className='loading-screen__card'>
-                    <div className='loading-screen__brain'>🧠</div>
-                    <h2 className='loading-screen__title'>Analyzing Your Profile</h2>
+                    {/* Circular ring spinner */}
+                    <div className='ls-ring-wrap'>
+                        <svg className='ls-ring' viewBox='0 0 120 120'>
+                            <defs>
+                                <linearGradient id='ringGrad' x1='0%' y1='0%' x2='100%' y2='0%'>
+                                    <stop offset='0%' stopColor='#ff2d78' />
+                                    <stop offset='50%' stopColor='#a855f7' />
+                                    <stop offset='100%' stopColor='#38bdf8' />
+                                </linearGradient>
+                            </defs>
+                            <circle className='ls-ring__track' cx='60' cy='60' r='52' />
+                            <circle
+                                className='ls-ring__fill'
+                                cx='60' cy='60' r='52'
+                                strokeDasharray={`${2 * Math.PI * 52}`}
+                                strokeDashoffset={`${2 * Math.PI * 52 * (1 - progress / 100)}`}
+                            />
+                        </svg>
+                        <div className='ls-ring__center'>
+                            <span className='ls-ring__pct'>{Math.round(progress)}%</span>
+                            <span className='ls-ring__label'>Analyzing</span>
+                        </div>
+                    </div>
+
+                    <h2 className='loading-screen__title'>AI is Analyzing Your Profile</h2>
+
+                    {/* Current step text */}
                     <p className='loading-screen__sub'>
                         {loadingSteps[currentStepIndex]}<span className='loading-dots'></span>
                     </p>
-                    <div className='loading-screen__bar'>
-                        <div 
-                            className='loading-screen__fill' 
-                            style={{ 
-                                width: `${progress}%`, 
-                                transition: 'width 0.2s linear' 
-                            }}
-                        />
+
+                    {/* Wave bars */}
+                    <div className='ls-wave'>
+                        {[...Array(8)].map((_, i) => (
+                            <div key={i} className='ls-wave__bar' style={{ animationDelay: `${i * 0.1}s` }} />
+                        ))}
                     </div>
-                    <p className='loading-screen__hint'>⚡ AI generation in progress... Please wait</p>
+
+                    <p className='loading-screen__hint'>⚡ Deep AI analysis in progress &mdash; building your personalized strategy</p>
                 </div>
             </main>
         )
@@ -188,7 +226,13 @@ const Home = () => {
                                     </span>
                                     <p className='dropzone__title' style={{color: '#22c55e'}}>✅ {selectedFile.name}</p>
                                     <p className='dropzone__subtitle'>{(selectedFile.size / 1024).toFixed(0)} KB</p>
-                                    <button type='button' onClick={handleRemoveFile} className='dropzone__remove'>Remove</button>
+                                    <div className='dropzone__actions'>
+                                        <button type='button' onClick={() => setShowResumePreview(true)} className='dropzone__view'>
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                                            View Resume
+                                        </button>
+                                        <button type='button' onClick={handleRemoveFile} className='dropzone__remove'>Remove</button>
+                                    </div>
                                 </div>
                             ) : (
                                 <label className='dropzone' htmlFor='resume'>
@@ -268,6 +312,31 @@ const Home = () => {
                 <a href='#'>Terms of Service</a>
                 <a href='#'>Help Center</a>
             </footer>
+
+            {/* Resume Preview Modal */}
+            {showResumePreview && selectedFile && (
+                <div className='resume-modal-overlay' onClick={() => setShowResumePreview(false)} onKeyDown={(e) => e.key === 'Escape' && setShowResumePreview(false)}>
+                    <div className='resume-modal' onClick={(e) => e.stopPropagation()}>
+                        <div className='resume-modal__header'>
+                            <div className='resume-modal__title-group'>
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ff2d78" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+                                <h3>{selectedFile.name}</h3>
+                                <span className='resume-modal__size'>{(selectedFile.size / 1024).toFixed(0)} KB</span>
+                            </div>
+                            <button className='resume-modal__close' onClick={() => setShowResumePreview(false)} title='Close preview'>
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                            </button>
+                        </div>
+                        <div className='resume-modal__body'>
+                            <iframe
+                                src={URL.createObjectURL(selectedFile)}
+                                title='Resume Preview'
+                                className='resume-modal__iframe'
+                            />
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     )
 }

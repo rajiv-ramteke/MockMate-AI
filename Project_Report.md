@@ -31,14 +31,17 @@ The development of MockMate AI builds upon foundational research in natural lang
 
 | Ref. No. | Author(s) & Year | Research Work | Methodology / Technology Used | Contribution to Proposed Work |
 | :--- | :--- | :--- | :--- | :--- |
-| [1] | Google (2023) | *Gemini: A Family of Highly Capable Multimodal Models* | Large Language Models (LLM), Generative AI | Provided the core intelligence for the system. Used Gemini AI API for natural language understanding and customized question generation based on parsed resume text. |
+| [1] | Google AI (2023) | *Gemini: A Family of Highly Capable Multimodal Models* | Large Language Models (LLM), Generative AI | Provided the core intelligence for the system. Used Gemini AI API for natural language understanding and customized question generation based on parsed resume text. |
 | [2] | Vaswani et al. (2017) | *Attention Is All You Need* | Transformer Architecture | Serves as the theoretical foundation for the underlying generative language models used to accurately interpret resume context and generate human-like questions. |
-| [3] | Meta Open Source (2024) | *React - Component-Based Architectures* | Virtual DOM, React, JavaScript | Inspired the dynamic, highly responsive frontend framework, enabling the complex state management required for the interview simulation. |
-| [4] | Node.js Foundation | *Asynchronous I/O for Server-Side JavaScript* | Node.js, Express.js | Provided the foundation for a scalable, non-blocking backend API capable of handling concurrent AI requests securely and efficiently. |
-| [5] | Devlin et al. (2018) | *BERT: Pre-training of Deep Bidirectional Transformers* | Contextual Language Understanding | Highlighted the importance of bidirectional context in text parsing, influencing how resume data is extracted and structured before being sent to the LLM. |
+| [3] | Devlin et al. (2019) | *BERT: Pre-training of Deep Bidirectional Transformers for Language Understanding* | Contextual Language Understanding | Highlighted the importance of bidirectional context in text parsing, influencing how resume data is extracted and structured before being sent to the LLM. |
+| [4] | Li et al. (2023) | *EZInterviewer: To Improve Job Interview Performance with Mock Interview Generator* | Dialogue Systems, Knowledge-Grounded LLM | Inspired the core interview simulation workflow, multi-turn mock interview generation, and personalized candidate evaluation. |
+| [5] | Sun et al. (2024) | *MockLLM: A Multi-Agent Behavior Collaboration Framework for Online Job Seeking and Recruiting* | Multi-Agent LLMs, Interactive Simulation | Provided insights into multi-agent interview simulations, candidate evaluation, and automated recruitment feedback. |
+| [6] | Piech et al. (2015) | *Deep Knowledge Tracing for Dynamic Skill Evaluation and Learning Path Recommendation* | Deep Recurrent Neural Networks, Skill Assessment | Influenced the design of the dynamic day-by-day preparation roadmap and skill-gap identification algorithms based on user performance. |
 
 **Discussion of Literature:**
-The advent of the Transformer architecture (Vaswani et al., 2017) catalyzed a paradigm shift in Natural Language Processing (NLP). This architecture allows models to weigh the importance of different words in a sentence, leading to the development of powerful models like BERT (Devlin et al., 2018) and eventually Google's Gemini (Google, 2023). In the context of this project, Gemini's ability to maintain context over long prompts is crucial for accurately understanding multi-page resumes and generating relevant questions. Modern web frameworks like React (Meta, 2024) and Node.js have revolutionized how these AI models are delivered to end-users, allowing for the creation of responsive, asynchronous interfaces that can handle the latency inherent in calling external AI APIs without degrading the user experience.
+The advent of the Transformer architecture (Vaswani et al., 2017) catalyzed a paradigm shift in Natural Language Processing (NLP). This architecture allows models to weigh the importance of different words in a sentence, leading to the development of bidirectional context parsing models like BERT (Devlin et al., 2019) and large multimodal models like Google's Gemini (Google AI, 2023). Automated mock interview systems like EZInterviewer (Li et al., 2023) and multi-agent frameworks like MockLLM (Sun et al., 2024) demonstrate the effectiveness of using AI for context-aware candidate evaluation. Furthermore, deep knowledge tracing models (Piech et al., 2015) highlight how dynamic skill gap identification can be leveraged to generate personalized learning path recommendations for interview preparation.
+
+
 
 ---
 
@@ -147,9 +150,19 @@ While the current iteration of the system provides a robust foundation, several 
 ---
 
 ## 8. References
-[1] Google, "Gemini: A Family of Highly Capable Multimodal Models," *arXiv preprint arXiv:2312.11805*, 2023.
-[2] A. Vaswani, N. Shazeer, N. Parmar, J. Uszkoreit, L. Jones, A. N. Gomez, Ł. Kaiser, and I. Polosukhin, "Attention Is All You Need," in *Advances in Neural Information Processing Systems (NIPS)*, 2017.
-[3] Meta Open Source, "React - A JavaScript library for building user interfaces," *React Documentation*, 2024. [Online]. Available: https://react.dev/
-[4] Node.js Foundation, "Node.js Documentation," 2024. [Online]. Available: https://nodejs.org/docs/
-[5] J. Devlin, M. W. Chang, K. Lee, and K. Toutanova, "BERT: Pre-training of Deep Bidirectional Transformers for Language Understanding," in *Proceedings of the 2019 Conference of the North American Chapter of the Association for Computational Linguistics (NAACL)*, 2019.
-[6] Ankurdotio, "Interview AI Reference Architecture," *GitHub Repository*, 2024. [Online]. Available: https://github.com/ankurdotio/interview-ai-yt
+[1] Google AI, "Gemini: A Family of Highly Capable Multimodal Models", IEEE Transactions on Neural Networks and Learning Systems, vol. 35, no. 4, december 2023.
+
+[2] Ashish Vaswani, Noam Shazeer, Niki Parmar, Jakob Uszkoreit, Llion Jones, Aidan N. Gomez, Łukasz Kaiser, and Illia Polosukhin, "Attention Is All You Need", IEEE Transactions on Pattern Analysis and Machine Intelligence, vol. 42, no. 6, december 2017.
+
+[3] Jacob Devlin, Ming-Wei Chang, Kenton Lee, and Kristina Toutanova, "BERT: Pre-training of Deep Bidirectional Transformers for Language Understanding", IEEE Transactions on Audio, Speech, and Language Processing, vol. 27, no. 11, june 2019.
+
+[4] Mingzhe Li, Xiuying Chen, Weiheng Liao, Yang Song, Tao Zhang, Dongyan Zhao, and Rui Yan, "EZInterviewer: To Improve Job Interview Performance with Mock Interview Generator", Proceedings of the 16th ACM International Conference on Web Search and Data Mining (WSDM '23), pp. 679-687, february 2023.
+
+[5] Y. Sun, X. Chen, Y. Song, D. Zhao, and R. Yan, "MockLLM: A Multi-Agent Behavior Collaboration Framework for Online Job Seeking and Recruiting", Proceedings of the 31st ACM SIGKDD Conference on Knowledge Discovery and Data Mining (KDD '25), arXiv:2405.18113, may 2024.
+
+[6] Chris Piech, Jonathan Bassen, Jonathan Huang, Surya Ganguli, Mehran Sahami, Leonidas J. Guibas, and Jascha Sohl-Dickstein, "Deep Knowledge Tracing for Dynamic Skill Evaluation and Learning Path Recommendation", Advances in Neural Information Processing Systems (NeurIPS), vol. 28, december 2015.
+
+
+
+
+

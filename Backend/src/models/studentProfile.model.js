@@ -1,56 +1,56 @@
 const mongoose = require("mongoose");
 
 const educationSchema = new mongoose.Schema({
-    degree: { type: String, required: true },
-    branch: { type: String, required: true },
-    college: { type: String, required: true },
-    university: { type: String },
-    startYear: { type: Number, required: true },
-    endYear: { type: Number, required: true },
-    scoreType: { type: String, enum: ['CGPA', 'Percentage'], required: true },
-    score: { type: Number, required: true }
-});
+    degree: { type: String, default: "" },
+    branch: { type: String, default: "" },
+    college: { type: String, default: "" },
+    university: { type: String, default: "" },
+    startYear: { type: Number },
+    endYear: { type: Number },
+    scoreType: { type: String, default: "CGPA" },
+    score: { type: Number }
+}, { _id: true });
 
 const experienceSchema = new mongoose.Schema({
-    type: { type: String, enum: ['Full-Time', 'Part-Time', 'Internship', 'Freelance'], required: true },
-    role: { type: String, required: true },
-    company: { type: String, required: true },
-    startDate: { type: Date, required: true },
+    type: { type: String, default: "Full-Time" },
+    role: { type: String, default: "" },
+    company: { type: String, default: "" },
+    startDate: { type: Date },
     endDate: { type: Date },
     isCurrent: { type: Boolean, default: false },
-    description: { type: String }
-});
+    description: { type: String, default: "" }
+}, { _id: true });
 
 const projectSchema = new mongoose.Schema({
-    title: { type: String, required: true },
-    role: { type: String },
+    title: { type: String, default: "" },
+    role: { type: String, default: "" },
     technologies: [{ type: String }],
-    description: { type: String },
-    contribution: { type: String },
-    githubUrl: { type: String },
-    liveUrl: { type: String }
-});
+    description: { type: String, default: "" },
+    contribution: { type: String, default: "" },
+    githubUrl: { type: String, default: "" },
+    liveUrl: { type: String, default: "" }
+}, { _id: true });
 
 const skillSchema = new mongoose.Schema({
-    category: { type: String, required: true },
-    name: { type: String, required: true },
-    level: { type: String, enum: ['Beginner', 'Intermediate', 'Advanced'], required: true }
-});
+    category: { type: String, default: "" },
+    name: { type: String, default: "" },
+    level: { type: String, default: "Intermediate" }
+}, { _id: true });
 
 const achievementSchema = new mongoose.Schema({
-    type: { type: String, required: true },
-    title: { type: String, required: true },
-    date: { type: Date, required: true },
-    description: { type: String }
-});
+    type: { type: String, default: "" },
+    title: { type: String, default: "" },
+    date: { type: Date },
+    description: { type: String, default: "" }
+}, { _id: true });
 
 const documentSchema = new mongoose.Schema({
-    title: { type: String, required: true },
-    format: { type: String, required: true },
+    title: { type: String, default: "" },
+    format: { type: String, default: "" },
     size: { type: Number },
-    base64Data: { type: String, required: true },
+    base64Data: { type: String, default: "" },
     uploadedAt: { type: Date, default: Date.now }
-});
+}, { _id: true });
 
 const studentProfileSchema = new mongoose.Schema({
     user: {
@@ -60,16 +60,16 @@ const studentProfileSchema = new mongoose.Schema({
         unique: true
     },
     // Personal Info
-    fullName: { type: String },
-    phone: { type: String },
+    fullName: { type: String, default: "" },
+    phone: { type: String, default: "" },
     dob: { type: Date },
-    gender: { type: String, enum: ['Male', 'Female', 'Other', 'Prefer not to say'] },
-    address: { type: String },
-    linkedin: { type: String },
-    github: { type: String },
-    portfolio: { type: String },
-    summary: { type: String },
-    profilePicture: { type: String }, // Base64
+    gender: { type: String, default: "" },
+    address: { type: String, default: "" },
+    linkedin: { type: String, default: "" },
+    github: { type: String, default: "" },
+    portfolio: { type: String, default: "" },
+    summary: { type: String, default: "" },
+    profilePicture: { type: String, default: "" }, // Base64
 
     // Data Arrays
     education: [educationSchema],

@@ -14,9 +14,9 @@ export const useInterview = () => {
 
     const { loading, setLoading, report, setReport, reports, setReports } = context
 
-    const evaluateAnswer = async ({ question, answer }) => {
+    const evaluateAnswer = async ({ question, answer, expectedAnswer }) => {
         try {
-            const response = await evaluateAnswerAPI({ question, answer })
+            const response = await evaluateAnswerAPI({ question, answer, expectedAnswer })
             return response.evaluation
         } catch (error) {
             console.error("Error evaluating answer:", error)

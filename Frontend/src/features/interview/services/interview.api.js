@@ -19,7 +19,8 @@ export const generateInterviewReport = async ({ jobDescription, selfDescription,
     const response = await api.post("/api/interview/", formData, {
         headers: {
             "Content-Type": "multipart/form-data"
-        }
+        },
+        timeout: 90000
     })
 
     return response.data
@@ -53,7 +54,7 @@ export const getAllInterviewReports = async () => {
 export const generateResumePdf = async ({ interviewReportId, candidateAnswers = [] }) => {
     const response = await api.post(`/api/interview/resume/pdf/${interviewReportId}`, 
         { candidateAnswers },
-        { responseType: "blob" }
+        { responseType: "blob", timeout: 120000 }
     )
     return response.data
 }
@@ -61,7 +62,7 @@ export const generateResumePdf = async ({ interviewReportId, candidateAnswers = 
 /**
  * @description Service to evaluate candidate's answer for a specific question.
  */
-export const evaluateAnswerAPI = async ({ question, answer }) => {
-    const response = await api.post("/api/interview/evaluate", { question, answer })
+export const evaluateAnswerAPI = async ({ question, answer, expectedAnswer }) => {
+    const response = await api.post("/api/interview/evaluate", { question, answer, expectedAnswer })
     return response.data
 }

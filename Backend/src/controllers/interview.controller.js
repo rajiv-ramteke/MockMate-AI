@@ -1,5 +1,5 @@
 const { PDFParse } = require("pdf-parse")
-const { generateInterviewReport, generateResumePdf } = require("../services/ai.service")
+const { generateInterviewReport, generateResumePdf, generateInstantTailoredReport } = require("../services/ai.service")
 const interviewReportModel = require("../models/interviewReport.model")
 
 
@@ -32,12 +32,34 @@ async function generateInterViewReportController(req, res) {
             jobDescription
         })
 
+        const technicalQuestions = (interViewReportByAi.technicalQuestions || []).map((q, idx) => ({
+            question: q?.question || `Technical Question ${idx + 1}`,
+            intention: q?.intention || "Assess candidate's technical and architectural depth for the target role.",
+            answer: q?.answer || "Provide a structured, accurate technical answer citing real-world examples."
+        }))
+
+        const behavioralQuestions = (interViewReportByAi.behavioralQuestions || []).map((q, idx) => ({
+            question: q?.question || `Behavioral Question ${idx + 1}`,
+            intention: q?.intention || "Assess candidate's behavioral adaptability, communication, and situational problem-solving.",
+            answer: q?.answer || "Structure response using Situation, Task, Action, and Result (STAR)."
+        }))
+
+        const skillGaps = (interViewReportByAi.skillGaps || []).map(g => {
+            let sev = (g?.severity || 'medium').toLowerCase()
+            if (!['low', 'medium', 'high'].includes(sev)) sev = 'medium'
+            return { skill: g?.skill || 'Technical Skill', severity: sev }
+        })
+
         const interviewReport = await interviewReportModel.create({
             user: req.user.id,
             resume: resumeContent,
             selfDescription: selfDescription || "",
             jobDescription,
-            ...interViewReportByAi
+            ...interViewReportByAi,
+            title: interViewReportByAi.title || "Job Preparation Strategy",
+            technicalQuestions,
+            behavioralQuestions,
+            skillGaps
         })
 
         res.status(201).json({
@@ -64,6 +86,46 @@ async function getInterviewReportByIdController(req, res) {
             return res.status(404).json({
                 message: "Interview report not found."
             })
+        }
+
+        // Auto-heal any report with missing behavioral questions, quiz, or tech questions
+        if (!interviewReport.behavioralQuestions?.length || !interviewReport.technicalQuiz?.length || interviewReport.technicalQuestions?.length < 5) {
+            try {
+                const repaired = generateInstantTailoredReport({
+                    resume: interviewReport.resume || "",
+                    selfDescription: interviewReport.selfDescription || "",
+                    jobDescription: interviewReport.jobDescription || ""
+                })
+
+                let hasUpdates = false
+                if ((!interviewReport.behavioralQuestions || interviewReport.behavioralQuestions.length === 0) && repaired.behavioralQuestions?.length) {
+                    interviewReport.behavioralQuestions = repaired.behavioralQuestions
+                    hasUpdates = true
+                }
+                if ((!interviewReport.technicalQuiz || interviewReport.technicalQuiz.length === 0) && repaired.technicalQuiz?.length) {
+                    interviewReport.technicalQuiz = repaired.technicalQuiz
+                    hasUpdates = true
+                }
+                if ((!interviewReport.technicalQuestions || interviewReport.technicalQuestions.length < 5) && repaired.technicalQuestions?.length) {
+                    interviewReport.technicalQuestions = repaired.technicalQuestions
+                    hasUpdates = true
+                }
+                if ((!interviewReport.skillGaps || interviewReport.skillGaps.length < 4) && repaired.skillGaps?.length) {
+                    interviewReport.skillGaps = repaired.skillGaps
+                    hasUpdates = true
+                }
+                if ((!interviewReport.preparationPlan || interviewReport.preparationPlan.length < 7) && repaired.preparationPlan?.length) {
+                    interviewReport.preparationPlan = repaired.preparationPlan
+                    hasUpdates = true
+                }
+
+                if (hasUpdates) {
+                    await interviewReport.save()
+                    console.log(`[Interview Controller] Auto-repaired report ${interviewId} with behavioral questions & quiz`)
+                }
+            } catch (healErr) {
+                console.error("[Interview Controller] Failed to auto-repair report:", healErr.message)
+            }
         }
 
         res.status(200).json({
@@ -144,14 +206,14 @@ async function generateResumePdfController(req, res) {
  */
 async function evaluateAnswerController(req, res) {
     try {
-        const { question, answer } = req.body
+        const { question, answer, expectedAnswer } = req.body
 
         if (!question || !answer) {
             return res.status(400).json({ message: "Question and answer are required." })
         }
 
         const { evaluateCandidateAnswer } = require("../services/ai.service")
-        const evaluation = await evaluateCandidateAnswer({ question, answer })
+        const evaluation = await evaluateCandidateAnswer({ question, answer, expectedAnswer })
 
         res.status(200).json({
             message: "Answer evaluated successfully.",
